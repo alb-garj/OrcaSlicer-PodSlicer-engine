@@ -284,7 +284,12 @@ if(SLIC3R_ANDROID)
     add_library(orcaslicer-core SHARED libslic3r_android_init.cpp)
     target_link_libraries(orcaslicer-core
         PRIVATE
+            # Force all of libslic3r's object files into the .so (whole-archive),
+            # so libpodslicer_jni.so (P1.1) and orca-cli can link this .so alone.
+            -Wl,--whole-archive
             libslic3r
+            libslic3r_cgal
+            -Wl,--no-whole-archive
             cereal::cereal
     )
     # Play Store 16 KB page-size alignment (mandatory since May 2026)
