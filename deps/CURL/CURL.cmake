@@ -38,12 +38,20 @@ elseif (APPLE)
     -DCURL_CA_PATH:STRING=none
   )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  set(_curl_platform_flags 
+  set(_curl_platform_flags
 
     ${_curl_platform_flags}
 
     -DCMAKE_USE_OPENSSL:BOOL=ON
 
+    -DCURL_CA_PATH:STRING=none
+    -DCURL_CA_BUNDLE:STRING=none
+    -DCURL_CA_FALLBACK:BOOL=ON
+  )
+elseif(ANDROID)
+  set(_curl_platform_flags
+    ${_curl_platform_flags}
+    -DCMAKE_USE_OPENSSL:BOOL=ON
     -DCURL_CA_PATH:STRING=none
     -DCURL_CA_BUNDLE:STRING=none
     -DCURL_CA_FALLBACK:BOOL=ON

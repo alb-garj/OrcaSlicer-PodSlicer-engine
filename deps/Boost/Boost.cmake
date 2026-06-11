@@ -9,6 +9,10 @@ if (APPLE AND CMAKE_OSX_ARCHITECTURES)
     endif ()
     set(_context_arch_line "-DBOOST_CONTEXT_ARCHITECTURE:STRING=${CMAKE_OSX_ARCHITECTURES}")
 endif ()
+if (ANDROID AND ANDROID_ABI STREQUAL "arm64-v8a")
+    set(_context_abi_line "-DBOOST_CONTEXT_ABI:STRING=aapcs")
+    set(_context_arch_line "-DBOOST_CONTEXT_ARCHITECTURE:STRING=arm64")
+endif ()
 
 # Windows ARM64: Boost.Context's default fcontext implementation assembles .asm
 # via armasm64, which trips a CMake ASM_ARMASM linker-module bug under the VS

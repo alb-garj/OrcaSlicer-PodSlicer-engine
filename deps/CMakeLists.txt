@@ -260,7 +260,10 @@ endif()
 endfunction(orcaslicer_add_cmake_project)
 
 
-if (MSVC)
+if (ANDROID)
+    message(STATUS "Building for Android (ABI: ${ANDROID_ABI}, Platform: ${ANDROID_PLATFORM})")
+    include("deps-android.cmake")
+elseif (MSVC)
     if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64")
         message(STATUS "\nDetected X64 compiler => building X64 deps bundle\n")
         set(DEPS_ARCH "x64")
@@ -338,10 +341,11 @@ include(Boost/Boost.cmake)
 
 include(Cereal/Cereal.cmake)
 include(Qhull/Qhull.cmake)
-include(GLEW/GLEW.cmake)
-
-include(GLFW/GLFW.cmake)
-include(OpenCSG/OpenCSG.cmake)
+if(NOT ANDROID)
+    include(GLEW/GLEW.cmake)
+    include(GLFW/GLFW.cmake)
+    include(OpenCSG/OpenCSG.cmake)
+endif()
 
 include(TBB/TBB.cmake)
 
@@ -385,10 +389,13 @@ if (NOT JPEG_FOUND)
     set(JPEG_PKG dep_JPEG)
 endif()
 
-# flatpak builds wxwidgets separately, so it is not included in the deps target
+# flatpak builds wxwidgets separately, so it is not included in the deps target;
+# Android has no GUI, so wxWidgets is not built at all
 set(WXWIDGETS_PKG "")
-include(wxWidgets/wxWidgets.cmake)
-if (NOT FLATPAK)
+if (NOT ANDROID)
+    include(wxWidgets/wxWidgets.cmake)
+endif()
+if (NOT FLATPAK AND NOT ANDROID)
     set(WXWIDGETS_PKG "dep_wxWidgets")
 endif()
 
@@ -415,6 +422,11 @@ endif ()
 include(OCCT/OCCT.cmake)
 include(OpenCV/OpenCV.cmake)
 
+set(GL_PKGS "")
+if(NOT ANDROID)
+    list(APPEND GL_PKGS dep_OpenCSG dep_GLFW)
+endif()
+
 set(_dep_list
     dep_Boost
     dep_TBB
@@ -425,11 +437,10 @@ set(_dep_list
     dep_Draco
     dep_NLopt
     dep_OpenVDB
-    dep_OpenCSG
+    ${GL_PKGS}
     dep_OpenCV
     dep_Eigen
     dep_CGAL
-    dep_GLFW
     dep_OCCT
     ${FREETYPE_PKG}
     ${PNG_PKG}
