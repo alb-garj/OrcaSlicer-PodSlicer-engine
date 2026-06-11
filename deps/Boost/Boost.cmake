@@ -9,6 +9,10 @@ if (APPLE AND CMAKE_OSX_ARCHITECTURES)
     endif ()
     set(_context_arch_line "-DBOOST_CONTEXT_ARCHITECTURE:STRING=${CMAKE_OSX_ARCHITECTURES}")
 endif ()
+if (ANDROID AND ANDROID_ABI STREQUAL "arm64-v8a")
+    set(_context_abi_line "-DBOOST_CONTEXT_ABI:STRING=aapcs")
+    set(_context_arch_line "-DBOOST_CONTEXT_ARCHITECTURE:STRING=arm64")
+endif ()
 
 orcaslicer_add_cmake_project(Boost
     URL "https://github.com/boostorg/boost/releases/download/boost-1.84.0/boost-1.84.0.tar.gz"

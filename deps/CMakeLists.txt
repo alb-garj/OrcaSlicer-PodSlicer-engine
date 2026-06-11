@@ -1,4 +1,4 @@
-#
+﻿#
 # This CMake project downloads, configures and builds OrcaSlicer dependencies on Unix and Windows.
 #
 # When using this script, it's recommended to perform an out-of-source build using CMake.
@@ -202,7 +202,10 @@ endif()
 endfunction(orcaslicer_add_cmake_project)
 
 
-if (MSVC)
+if (ANDROID)
+    message(STATUS "Building for Android (ABI: ${ANDROID_ABI}, Platform: ${ANDROID_PLATFORM})")
+    include("deps-android.cmake")
+elseif (MSVC)
     if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64")
         message(STATUS "\nDetected X64 compiler => building X64 deps bundle\n")
         set(DEPS_ARCH "x64")
@@ -276,10 +279,11 @@ include(Boost/Boost.cmake)
 # The order of includes respects the dependencies between libraries
 include(Cereal/Cereal.cmake)
 include(Qhull/Qhull.cmake)
-include(GLEW/GLEW.cmake)
-
-include(GLFW/GLFW.cmake)
-include(OpenCSG/OpenCSG.cmake)
+if(NOT ANDROID)
+    include(GLEW/GLEW.cmake)
+    include(GLFW/GLFW.cmake)
+    include(OpenCSG/OpenCSG.cmake)
+endif()
 
 include(TBB/TBB.cmake)
 
@@ -320,9 +324,9 @@ if (NOT JPEG_FOUND)
     set(JPEG_PKG dep_JPEG)
 endif()
 
-# flatpak builds wxwidgets separately 
+# flatpak builds wxwidgets separately; Android has no GUI
 set(WXWIDGETS_PKG "")
-if (NOT FLATPAK)
+if (NOT FLATPAK AND NOT ANDROID)
     include(wxWidgets/wxWidgets.cmake)
     set(WXWIDGETS_PKG "dep_wxWidgets")
 endif()
@@ -350,6 +354,11 @@ endif ()
 include(OCCT/OCCT.cmake)
 include(OpenCV/OpenCV.cmake)
 
+set(GL_PKGS "")
+if(NOT ANDROID)
+    list(APPEND GL_PKGS dep_OpenCSG dep_GLFW)
+endif()
+
 set(_dep_list
     dep_Boost
     dep_TBB
@@ -359,10 +368,9 @@ set(_dep_list
     dep_Cereal
     dep_NLopt
     dep_OpenVDB
-    dep_OpenCSG
+    ${GL_PKGS}
     dep_OpenCV
     dep_CGAL
-    dep_GLFW
     dep_OCCT
     ${FREETYPE_PKG}
     ${PNG_PKG}
