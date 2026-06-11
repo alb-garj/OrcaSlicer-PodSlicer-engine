@@ -55,6 +55,10 @@ void detect_platform()
             }
         }
     }
+#elif defined(__ANDROID__)
+    BOOST_LOG_TRIVIAL(info) << "Platform: Android";
+    s_platform        = Platform::Android;
+    s_platform_flavor = PlatformFlavor::GenericAndroid;
 #elif defined(__linux__)
     BOOST_LOG_TRIVIAL(info) << "Platform: Linux";
 	s_platform 		  = Platform::Linux;
@@ -115,6 +119,7 @@ std::string platform_to_string(Platform platform)
         case Platform::Windows      : return "Windows";
         case Platform::OSX          : return "OSX";
         case Platform::Linux        : return "Linux";
+        case Platform::Android      : return "Android";
         case Platform::BSDUnix      : return "BSDUnix";
     }
     assert(false);
@@ -130,6 +135,7 @@ std::string platform_flavor_to_string(PlatformFlavor pf)
         case PlatformFlavor::Unknown         : return "Unknown";
         case PlatformFlavor::Generic         : return "Generic";
         case PlatformFlavor::GenericLinux    : return "GenericLinux";
+        case PlatformFlavor::GenericAndroid  : return "GenericAndroid";
         case PlatformFlavor::LinuxOnChromium : return "LinuxOnChromium";
         case PlatformFlavor::WSL             : return "WSL";
         case PlatformFlavor::WSL2            : return "WSL2";

@@ -14,6 +14,8 @@ Upstream PRs are tracked in the last column; accepted PRs shrink this table perm
 | 5 | `deps/Boost/Boost.cmake` | Android arm64 aapcs context ABI | Boost.Context needs explicit ABI on arm64 Android | — |
 | 6 | `CMakeLists.txt` | `SLIC3R_ANDROID` option: auto-sets `SLIC3R_GUI=OFF`, `SLIC3R_STATIC=ON`, `SLIC3R_PCH=OFF` | Engine has no Android-specific build mode | — |
 | 7 | `src/CMakeLists.txt` + `src/libslic3r_android_init.cpp` | `liborcaslicer-core` shared library target for Android | Needed for JNI loading on Android | — |
+| 8 | `src/libslic3r/Platform.hpp` + `Platform.cpp` | `Platform::Android` enum + `#elif defined(__ANDROID__)` detection before Linux branch | Android defines `__linux__` but needs distinct identity for runtime decisions | — |
+| 9 | `src/libslic3r/GCode/PostProcessor.cpp` | Guard `boost::process` with `#ifndef __ANDROID__`; Android stub returns 0 | `boost::process` requires `fork/exec` not available on Android/Bionic | — |
 
 ## How to update to a new upstream tag
 
