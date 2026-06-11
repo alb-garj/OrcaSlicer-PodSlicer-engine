@@ -7,7 +7,11 @@ Upstream PRs are tracked in the last column; accepted PRs shrink this table perm
 
 | # | Patch / file changed | What it does | Why upstream lacks it | Upstream PR |
 |---|---|---|---|---|
-| — | *(none yet — Phase 0 adds entries here)* | — | — | — |
+| 1 | `deps/deps-android.cmake` (new) | Android NDK arm64-v8a cross-compilation platform for the dep build system | Upstream builds only target Linux/macOS/Win; Android is a new platform | — |
+| 2 | `deps/CMakeLists.txt` | Android dispatch + skip GUI-only deps (wxWidgets, GLEW, GLFW, OpenCSG) | Deps that need a display cannot build on Android | — |
+| 3 | `deps/OpenSSL/OpenSSL.cmake` | Android `android-arm64` Configure target | Non-cmake build needs explicit Android target, not auto-detect | — |
+| 4 | `deps/CURL/CURL.cmake` | Android platform SSL flags | `CMAKE_SYSTEM_NAME=Android` not matched by existing Linux path | — |
+| 5 | `deps/Boost/Boost.cmake` | Android arm64 aapcs context ABI | Boost.Context needs explicit ABI on arm64 Android | — |
 
 ## How to update to a new upstream tag
 
