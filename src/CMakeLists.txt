@@ -277,3 +277,26 @@ if (WIN32)
 else ()
     install(TARGETS OrcaSlicer RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif ()
+
+# Android: package libslic3r into a shared library loadable via System.loadLibrary().
+# SAPIL JNI entry points (P1.1) link against this .so from engine-jni/.
+if(SLIC3R_ANDROID)
+    add_library(orcaslicer-core SHARED libslic3r_android_init.cpp)
+    target_link_libraries(orcaslicer-core
+        PRIVATE
+            libslic3r
+            cereal::cereal
+    )
+    # Play Store 16 KB page-size alignment (mandatory since May 2026)
+    target_link_options(orcaslicer-core
+        PRIVATE
+            "-Wl,-z,common-page-size=16384"
+            "-Wl,-z,max-page-size=16384"
+    )
+    set_target_properties(orcaslicer-core PROPERTIES
+        OUTPUT_NAME "orcaslicer-core"
+        SOVERSION 1
+        VERSION 2.3.1
+    )
+    install(TARGETS orcaslicer-core LIBRARY DESTINATION lib)
+endif()

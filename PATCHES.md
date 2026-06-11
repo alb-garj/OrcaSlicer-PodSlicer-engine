@@ -12,6 +12,8 @@ Upstream PRs are tracked in the last column; accepted PRs shrink this table perm
 | 3 | `deps/OpenSSL/OpenSSL.cmake` | Android `android-arm64` Configure target | Non-cmake build needs explicit Android target, not auto-detect | — |
 | 4 | `deps/CURL/CURL.cmake` | Android platform SSL flags | `CMAKE_SYSTEM_NAME=Android` not matched by existing Linux path | — |
 | 5 | `deps/Boost/Boost.cmake` | Android arm64 aapcs context ABI | Boost.Context needs explicit ABI on arm64 Android | — |
+| 6 | `CMakeLists.txt` | `SLIC3R_ANDROID` option: auto-sets `SLIC3R_GUI=OFF`, `SLIC3R_STATIC=ON`, `SLIC3R_PCH=OFF` | Engine has no Android-specific build mode | — |
+| 7 | `src/CMakeLists.txt` + `src/libslic3r_android_init.cpp` | `liborcaslicer-core` shared library target for Android | Needed for JNI loading on Android | — |
 
 ## How to update to a new upstream tag
 
