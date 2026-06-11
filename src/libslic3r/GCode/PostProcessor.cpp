@@ -149,6 +149,8 @@ static int run_script(const std::string &script, const std::string &gcode, std::
 
 #include <cstdlib>   // getenv()
 #include <sstream>
+
+#ifndef __ANDROID__
 #include <boost/process.hpp>
 
 namespace process = boost::process;
@@ -184,6 +186,14 @@ static int run_script(const std::string &script, const std::string &gcode, std::
     child.wait();
     return child.exit_code();
 }
+#else // __ANDROID__
+
+static int run_script(const std::string &/*script*/, const std::string &/*gcode*/, std::string &/*std_err*/)
+{
+    // G-code post-processing scripts are not supported on Android.
+    return 0;
+}
+#endif // __ANDROID__
 
 #endif
 
