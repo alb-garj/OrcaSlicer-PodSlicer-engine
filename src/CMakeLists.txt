@@ -299,4 +299,14 @@ if(SLIC3R_ANDROID)
         VERSION 2.3.1
     )
     install(TARGETS orcaslicer-core LIBRARY DESTINATION lib)
+
+    # CLI harness: standalone executable for on-device testing via adb shell.
+    # Links orcaslicer-core so the .so is in the same directory.
+    add_executable(orca-cli OrcaSlicer.cpp OrcaSlicer.hpp)
+    target_link_libraries(orca-cli PRIVATE orcaslicer-core cereal::cereal)
+    target_link_options(orca-cli PRIVATE
+        "-Wl,-z,common-page-size=16384"
+        "-Wl,-z,max-page-size=16384"
+    )
+    install(TARGETS orca-cli RUNTIME DESTINATION bin)
 endif()
