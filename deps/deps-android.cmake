@@ -6,10 +6,9 @@
 #
 # OpenSSL's non-cmake configure script reads OPENSSL_ARCH to select the target.
 # PIC is the Android default, so DEP_CMAKE_OPTS is empty.
-# DEP_ANDROID_SKIP_GUI suppresses GUI-only deps (wxWidgets, GLEW, GLFW, OpenCSG).
+# GUI-only deps (wxWidgets, GLEW, GLFW, OpenCSG) are skipped via if(NOT ANDROID) guards in deps/CMakeLists.txt.
 
 set(OPENSSL_ARCH "android-arm64")
 set(DEP_CMAKE_OPTS "")
-set(DEP_ANDROID_SKIP_GUI ON)
 
 include("deps-unix-common.cmake")
