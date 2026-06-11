@@ -5965,7 +5965,13 @@ bool CLI::setup(int argc, char **argv)
 
     // See Invoking prusa-slicer from $PATH environment variable crashes #5542
     // boost::filesystem::path path_to_binary = boost::filesystem::system_complete(argv[0]);
+#ifdef __ANDROID__
+    // boost::dll::program_location() is unreliable on Android; argv[0] is sufficient
+    // for the on-device CLI harness where we control the launch path.
+    boost::filesystem::path path_to_binary = boost::filesystem::system_complete(argv[0]);
+#else
     boost::filesystem::path path_to_binary = boost::dll::program_location();
+#endif
 
     // Path from the Slic3r binary to its resources.
 #ifdef __APPLE__

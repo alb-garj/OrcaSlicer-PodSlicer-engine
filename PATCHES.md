@@ -16,6 +16,8 @@ Upstream PRs are tracked in the last column; accepted PRs shrink this table perm
 | 7 | `src/CMakeLists.txt` + `src/libslic3r_android_init.cpp` | `liborcaslicer-core` shared library target for Android | Needed for JNI loading on Android | — |
 | 8 | `src/libslic3r/Platform.hpp` + `Platform.cpp` | `Platform::Android` enum + `#elif defined(__ANDROID__)` detection before Linux branch | Android defines `__linux__` but needs distinct identity for runtime decisions | — |
 | 9 | `src/libslic3r/GCode/PostProcessor.cpp` | Guard `boost::process` with `#ifndef __ANDROID__`; Android stub returns 0 | `boost::process` requires `fork/exec` not available on Android/Bionic | — |
+| 10 | `src/OrcaSlicer.cpp` | Android guard for `boost::dll::program_location()` → `argv[0]`; `boost::dll` is unreliable on Android | `boost::dll` ELF/dl_iterate_phdr internals not available on all Android versions | — |
+| 11 | `src/CMakeLists.txt` | `orca-cli` native executable target; links `orcaslicer-core.so`; 16 KB aligned | Android CLI harness for adb-based on-device slice validation | — |
 
 ## How to update to a new upstream tag
 
