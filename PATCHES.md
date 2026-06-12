@@ -25,6 +25,7 @@ Upstream PRs are tracked in the last column; accepted PRs shrink this table perm
 | 16 | `deps/CURL/CURL.cmake` | Android section: pass explicit `-DOPENSSL_CRYPTO_LIBRARY/-DOPENSSL_SSL_LIBRARY/-DOPENSSL_INCLUDE_DIR=${DESTDIR}/…`; add `add_dependencies(dep_CURL dep_OpenSSL)` | NDK toolchain sets `CMAKE_FIND_ROOT_PATH_MODE_{INCLUDE,LIBRARY}=ONLY` → `CMAKE_PREFIX_PATH` is ignored; cross-compiled OpenSSL in destdir is never found without explicit paths | — |
 | 17 | `deps/GMP/GMP.cmake` + `deps/MPFR/MPFR.cmake` | Pass `MAKEINFO=true` to `make` BUILD_COMMAND and INSTALL_COMMAND | GMP/MPFR build the `doc/` subdirectory which requires `makeinfo` (texinfo); when building on NTFS via WSL2, .texi timestamps appear modified and make tries to regenerate .info files — overriding `MAKEINFO` to the no-op `true` suppresses this without skipping the library build | — |
 | 18 | `deps/MPFR/MPFR.cmake` | Skip `autoreconf -f -i` when `ANDROID`; add `--disable-maintainer-mode` to configure | MPFR 4.2.2 ships a pre-generated configure script so autoreconf is unneeded; NTFS timestamps on /mnt/c/ cause make to think `configure.ac`/`Makefile.am` are newer than generated files — enabling maintainer mode causes make to invoke autoconf/automake which are not installed | — |
+| 19 | `deps/deps-android.cmake` | Cap `NPROC` to 4 when `NPROC > 4` for Android | OCCT cross-compilation with -j16 exhausts WSL2 RAM (8GB; ~400-700MB per clang++ process × 16 = OOM segfault); -j4 uses ~2.8 GB leaving comfortable headroom | — |
 
 ## How to update to a new upstream tag
 
