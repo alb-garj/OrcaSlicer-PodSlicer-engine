@@ -11,7 +11,7 @@ endif ()
 orcaslicer_add_cmake_project(OpenCV
     URL https://github.com/opencv/opencv/archive/refs/tags/4.6.0.tar.gz
     URL_HASH SHA256=1ec1cba65f9f20fe5a41fda1586e01c70ea0c9a6d7b67c9e13edf0cfe2239277
-    PATCH_COMMAND git apply ${OpenCV_DIRECTORY_FLAG} --verbose --ignore-space-change --whitespace=fix ${CMAKE_CURRENT_LIST_DIR}/0001-vs2022.patch  ${CMAKE_CURRENT_LIST_DIR}/0002-clang19-macos.patch
+    PATCH_COMMAND git apply ${OpenCV_DIRECTORY_FLAG} --verbose --ignore-space-change --whitespace=fix ${CMAKE_CURRENT_LIST_DIR}/0001-vs2022.patch ${CMAKE_CURRENT_LIST_DIR}/0002-clang19-macos.patch
     CMAKE_ARGS
     -DBUILD_SHARED_LIBS=0
        -DBUILD_PERE_TESTS=OFF
@@ -74,4 +74,19 @@ orcaslicer_add_cmake_project(OpenCV
        -DWITH_WIN32UI=OFF
        -DHAVE_WIN32UI=FALSE
 )
+
+# On Android, samples/android/CMakeLists.txt unconditionally calls add_android_project
+# which is only available in the Android Gradle plugin — not in NDK-only builds.
+# ExternalProject_Add_Step runs between patch and configure; <SOURCE_DIR> is supported.
+if(ANDROID)
+    ExternalProject_Add_Step(dep_OpenCV android_guard
+        COMMAND ${CMAKE_COMMAND}
+            "-DANDROID=1"
+            "-DTARGET_FILE=<SOURCE_DIR>/samples/android/CMakeLists.txt"
+            -P ${CMAKE_CURRENT_LIST_DIR}/android-guard.cmake
+        DEPENDEES patch
+        DEPENDERS configure
+        COMMENT "Prepending add_android_project guard to OpenCV samples/android/CMakeLists.txt"
+    )
+endif()
 
