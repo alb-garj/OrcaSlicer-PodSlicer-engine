@@ -120,6 +120,13 @@ function(orcaslicer_add_cmake_project projectname)
     if (MSVC)
         set(_gen CMAKE_GENERATOR "${DEP_MSVC_GEN}" CMAKE_GENERATOR_PLATFORM "${DEP_PLATFORM}")
         set(_build_j "/m")
+    elseif(ANDROID)
+        # On Android/WSL2 OCCT+friends exhaust RAM at -j>4 (~700MB/clang++ × j).
+        # ProcessorCount() may shadow the -DNPROC cache var inside a function scope;
+        # guard here to ensure the cap is applied regardless of scope resolution.
+        if(_build_j MATCHES "^-j([0-9]+)$" AND CMAKE_MATCH_1 GREATER 4)
+            set(_build_j "-j4")
+        endif()
     endif ()
 
 if (NOT IS_CROSS_COMPILE OR NOT APPLE)
