@@ -20,10 +20,18 @@ endif()
 # Forward ANDROID_ABI/PLATFORM to all sub-project cmake invocations.
 # Without these, inner builds (Boost, OpenCV, etc.) default to armeabi-v7a
 # because the NDK toolchain only gets CMAKE_TOOLCHAIN_FILE, not the ABI variables.
+#
+# FIND_ROOT_PATH_MODE_*=BOTH: the NDK toolchain defaults these to ONLY, which causes
+# find_package()/find_library() to ignore CMAKE_PREFIX_PATH (our destdir).
+# BOTH allows searching both the NDK sysroot AND CMAKE_PREFIX_PATH so cross-compiled
+# deps (Boost, Freetype, OpenEXR, etc.) are located without explicit path vars.
 set(DEP_CMAKE_OPTS
     "-DANDROID_ABI=${ANDROID_ABI}"
     "-DANDROID_PLATFORM=${ANDROID_PLATFORM}"
     "-DANDROID_STL=c++_shared"
+    "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH"
+    "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH"
+    "-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH"
 )
 
 # Used by GMP.cmake / MPFR.cmake autoconf configure --host= arg
