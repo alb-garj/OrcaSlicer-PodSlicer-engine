@@ -31,14 +31,22 @@ else ()
         set(_autoconf_cxx "${CMAKE_CXX_COMPILER}")
     endif()
 
+    # MPFR 4.2.2 ships a pre-generated configure script; autoreconf -f -i is only
+    # needed on desktop hosts where automake versions differ. Skip it on Android
+    # to avoid requiring the autoconf package on the WSL2 build host.
+    if(ANDROID)
+        set(_mpfr_configure_cmd env "CC=${_autoconf_cc}" "CXX=${_autoconf_cxx}" "CFLAGS=${_gmp_ccflags}" "CXXFLAGS=${_gmp_ccflags}" "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS}" ./configure ${_cross_compile_arg} --prefix=${DESTDIR} --enable-shared=no --enable-static=yes --with-gmp=${DESTDIR} ${_gmp_build_tgt})
+    else()
+        set(_mpfr_configure_cmd autoreconf -f -i && env "CC=${_autoconf_cc}" "CXX=${_autoconf_cxx}" "CFLAGS=${_gmp_ccflags}" "CXXFLAGS=${_gmp_ccflags}" "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS}" ./configure ${_cross_compile_arg} --prefix=${DESTDIR} --enable-shared=no --enable-static=yes --with-gmp=${DESTDIR} ${_gmp_build_tgt})
+    endif()
+
     ExternalProject_Add(dep_MPFR
         URL https://ftp.gnu.org/gnu/mpfr/mpfr-4.2.2.tar.bz2
             https://www.mpfr.org/mpfr-4.2.2/mpfr-4.2.2.tar.bz2
         URL_HASH SHA256=9ad62c7dc910303cd384ff8f1f4767a655124980bb6d8650fe62c815a231bb7b
         DOWNLOAD_DIR ${DEP_DOWNLOAD_DIR}/MPFR
         BUILD_IN_SOURCE ON
-        CONFIGURE_COMMAND autoreconf -f -i &&
-                          env "CC=${_autoconf_cc}" "CXX=${_autoconf_cxx}" "CFLAGS=${_gmp_ccflags}" "CXXFLAGS=${_gmp_ccflags}" "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS}" ./configure ${_cross_compile_arg} --prefix=${DESTDIR} --enable-shared=no --enable-static=yes --with-gmp=${DESTDIR} ${_gmp_build_tgt}
+        CONFIGURE_COMMAND ${_mpfr_configure_cmd}
         BUILD_COMMAND make -j MAKEINFO=true
         INSTALL_COMMAND make install MAKEINFO=true
         DEPENDS dep_GMP
