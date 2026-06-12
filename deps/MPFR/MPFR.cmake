@@ -35,7 +35,7 @@ else ()
     # needed on desktop hosts where automake versions differ. Skip it on Android
     # to avoid requiring the autoconf package on the WSL2 build host.
     if(ANDROID)
-        set(_mpfr_configure_cmd env "CC=${_autoconf_cc}" "CXX=${_autoconf_cxx}" "CFLAGS=${_gmp_ccflags}" "CXXFLAGS=${_gmp_ccflags}" ./configure ${_cross_compile_arg} --prefix=${DESTDIR} --enable-shared=no --enable-static=yes --with-gmp=${DESTDIR} ${_gmp_build_tgt})
+        set(_mpfr_configure_cmd env "CC=${_autoconf_cc}" "CXX=${_autoconf_cxx}" "CFLAGS=${_gmp_ccflags}" "CXXFLAGS=${_gmp_ccflags}" ./configure ${_cross_compile_arg} --disable-maintainer-mode --prefix=${DESTDIR} --enable-shared=no --enable-static=yes --with-gmp=${DESTDIR} ${_gmp_build_tgt})
     else()
         set(_mpfr_configure_cmd autoreconf -f -i && env "CC=${_autoconf_cc}" "CXX=${_autoconf_cxx}" "CFLAGS=${_gmp_ccflags}" "CXXFLAGS=${_gmp_ccflags}" ./configure ${_cross_compile_arg} --prefix=${DESTDIR} --enable-shared=no --enable-static=yes --with-gmp=${DESTDIR} ${_gmp_build_tgt})
     endif()
