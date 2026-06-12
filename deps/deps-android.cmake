@@ -5,10 +5,29 @@
 # pointing to $NDK/build/cmake/android.toolchain.cmake.
 #
 # OpenSSL's non-cmake configure script reads OPENSSL_ARCH to select the target.
-# PIC is the Android default, so DEP_CMAKE_OPTS is empty.
 # GUI-only deps (wxWidgets, GLEW, GLFW, OpenCSG) are skipped via if(NOT ANDROID) guards in deps/CMakeLists.txt.
 
 set(OPENSSL_ARCH "android-arm64")
-set(DEP_CMAKE_OPTS "")
+
+# Forward ANDROID_ABI/PLATFORM to all sub-project cmake invocations.
+# Without these, inner builds (Boost, OpenCV, etc.) default to armeabi-v7a
+# because the NDK toolchain only gets CMAKE_TOOLCHAIN_FILE, not the ABI variables.
+set(DEP_CMAKE_OPTS
+    "-DANDROID_ABI=${ANDROID_ABI}"
+    "-DANDROID_PLATFORM=${ANDROID_PLATFORM}"
+    "-DANDROID_STL=c++_shared"
+)
+
+# Used by GMP.cmake / MPFR.cmake autoconf configure --host= arg
+set(TOOLCHAIN_PREFIX "aarch64-linux-android")
+
+# Versioned clang wrappers (e.g. aarch64-linux-android26-clang) have --target baked in.
+# Bare CMAKE_C_COMPILER is generic clang — it compiles for the build host when
+# called by autoconf configure without explicit --target, so GMP/MPFR configure
+# C++ checks fail. Derive from the cmake compiler path and ANDROID_PLATFORM.
+get_filename_component(_toolchain_bin "${CMAKE_C_COMPILER}" DIRECTORY)
+string(REPLACE "android-" "" _android_api "${ANDROID_PLATFORM}")
+set(ANDROID_AUTOCONF_CC  "${_toolchain_bin}/aarch64-linux-android${_android_api}-clang")
+set(ANDROID_AUTOCONF_CXX "${_toolchain_bin}/aarch64-linux-android${_android_api}-clang++")
 
 include("deps-unix-common.cmake")

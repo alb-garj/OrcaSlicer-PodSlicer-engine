@@ -49,9 +49,16 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     -DCURL_CA_FALLBACK:BOOL=ON
   )
 elseif(ANDROID)
+  # NDK toolchain sets CMAKE_FIND_ROOT_PATH_MODE=ONLY, which makes FindOpenSSL
+  # ignore CMAKE_PREFIX_PATH and only search the NDK sysroot. Pass explicit paths
+  # so cmake skips the search entirely.
   set(_curl_platform_flags
     ${_curl_platform_flags}
     -DCMAKE_USE_OPENSSL:BOOL=ON
+    "-DOPENSSL_ROOT_DIR=${DESTDIR}"
+    "-DOPENSSL_CRYPTO_LIBRARY=${DESTDIR}/lib/libcrypto.a"
+    "-DOPENSSL_SSL_LIBRARY=${DESTDIR}/lib/libssl.a"
+    "-DOPENSSL_INCLUDE_DIR=${DESTDIR}/include"
     -DCURL_CA_PATH:STRING=none
     -DCURL_CA_BUNDLE:STRING=none
     -DCURL_CA_FALLBACK:BOOL=ON
@@ -80,7 +87,9 @@ orcaslicer_add_cmake_project(CURL
     ${_curl_platform_flags}
 )
 
-if(NOT OPENSSL_FOUND)
+if(ANDROID)
+  add_dependencies(dep_CURL dep_OpenSSL)
+elseif(NOT OPENSSL_FOUND)
   # (openssl may or may not be built)
   add_dependencies(dep_CURL ${OPENSSL_PKG})
 endif()

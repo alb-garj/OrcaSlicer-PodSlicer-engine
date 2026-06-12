@@ -20,9 +20,16 @@ else ()
 
     set(_cross_compile_arg "")
     if (CMAKE_CROSSCOMPILING)
-        # TOOLCHAIN_PREFIX should be defined in the toolchain file
         set(_cross_compile_arg --host=${TOOLCHAIN_PREFIX})
     endif ()
+
+    if (ANDROID AND DEFINED ANDROID_AUTOCONF_CC)
+        set(_autoconf_cc  "${ANDROID_AUTOCONF_CC}")
+        set(_autoconf_cxx "${ANDROID_AUTOCONF_CXX}")
+    else()
+        set(_autoconf_cc  "${CMAKE_C_COMPILER}")
+        set(_autoconf_cxx "${CMAKE_CXX_COMPILER}")
+    endif()
 
     ExternalProject_Add(dep_MPFR
         URL https://ftp.gnu.org/gnu/mpfr/mpfr-4.2.2.tar.bz2
@@ -30,10 +37,10 @@ else ()
         URL_HASH SHA256=9ad62c7dc910303cd384ff8f1f4767a655124980bb6d8650fe62c815a231bb7b
         DOWNLOAD_DIR ${DEP_DOWNLOAD_DIR}/MPFR
         BUILD_IN_SOURCE ON
-        CONFIGURE_COMMAND autoreconf -f -i && 
-                          env "CC=${CMAKE_C_COMPILER}" "CXX=${CMAKE_CXX_COMPILER}" "CFLAGS=${_gmp_ccflags}" "CXXFLAGS=${_gmp_ccflags}" "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS}" ./configure ${_cross_compile_arg} --prefix=${DESTDIR} --enable-shared=no --enable-static=yes --with-gmp=${DESTDIR} ${_gmp_build_tgt}
-        BUILD_COMMAND make -j
-        INSTALL_COMMAND make install
+        CONFIGURE_COMMAND autoreconf -f -i &&
+                          env "CC=${_autoconf_cc}" "CXX=${_autoconf_cxx}" "CFLAGS=${_gmp_ccflags}" "CXXFLAGS=${_gmp_ccflags}" "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS}" ./configure ${_cross_compile_arg} --prefix=${DESTDIR} --enable-shared=no --enable-static=yes --with-gmp=${DESTDIR} ${_gmp_build_tgt}
+        BUILD_COMMAND make -j MAKEINFO=true
+        INSTALL_COMMAND make install MAKEINFO=true
         DEPENDS dep_GMP
     )
 endif ()

@@ -1,5 +1,7 @@
 if (FLATPAK AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(_patch_command ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_LIST_DIR}/GNU.cmake ./cmake/compilers/GNU.cmake)
+elseif (ANDROID)
+    set(_patch_command ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_DIR}/tbb-android-stl-fix.cmake <SOURCE_DIR>/CMakeLists.txt)
 else()
     set(_patch_command "")
 endif()
