@@ -9,6 +9,14 @@
 
 set(OPENSSL_ARCH "android-arm64")
 
+# Cap build parallelism on Android/WSL2: large deps (OCCT) launch ~NPROC parallel clang++
+# processes each loading the full OCCT header set (~400-700 MB/process).  With the host
+# reporting 16 CPUs and WSL2 having ~8 GB RAM, -j16 exhausts memory and segfaults.
+# -j4 uses ~2.8 GB and leaves comfortable headroom.  Other platforms are unaffected.
+if(NPROC GREATER 4)
+    set(NPROC 4)
+endif()
+
 # Forward ANDROID_ABI/PLATFORM to all sub-project cmake invocations.
 # Without these, inner builds (Boost, OpenCV, etc.) default to armeabi-v7a
 # because the NDK toolchain only gets CMAKE_TOOLCHAIN_FILE, not the ABI variables.
