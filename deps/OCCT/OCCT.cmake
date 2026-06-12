@@ -4,6 +4,14 @@ else()
     set(library_build_type "Static")
 endif()
 
+# Visualization modules are all OFF for Android; disabling Freetype avoids
+# cross-compile find_package issues (FindFreetype needs explicit paths under NDK sysroot).
+if(ANDROID)
+    set(_occt_use_freetype OFF)
+else()
+    set(_occt_use_freetype ON)
+endif()
+
 if (IN_GIT_REPO)
     set(OCCT_DIRECTORY_FLAG --directory ${BINARY_DIR_REL}/dep_OCCT-prefix/src/dep_OCCT)
 endif ()
@@ -20,7 +28,7 @@ orcaslicer_add_cmake_project(OCCT
         -DBUILD_LIBRARY_TYPE=${library_build_type}
         -DUSE_TK=OFF
         -DUSE_TBB=OFF
-	#-DUSE_FREETYPE=OFF
+        -DUSE_FREETYPE=${_occt_use_freetype}
         -DUSE_FFMPEG=OFF
         -DUSE_VTK=OFF
         -DBUILD_DOC_Overview=OFF
