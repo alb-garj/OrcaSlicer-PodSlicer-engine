@@ -178,6 +178,14 @@ function(orcaslicer_add_cmake_project projectname)
       set(_build_j "")  # assume environment will control --build parallel setting
     elseif(MSVC)
       set(_build_j "/m")
+    elseif(ANDROID)
+      # On Android/WSL2 OCCT+friends exhaust RAM at -j>4 (~700MB/clang++ × j).
+      # ProcessorCount() may shadow the -DNPROC cache var inside a function scope;
+      # guard here to ensure the cap is applied regardless of scope resolution.
+      set(_build_j "-j${NPROC}")
+      if(_build_j MATCHES "^-j([0-9]+)$" AND CMAKE_MATCH_1 GREATER 4)
+        set(_build_j "-j4")
+      endif()
     else()
       set(_build_j "-j${NPROC}")
     endif ()
