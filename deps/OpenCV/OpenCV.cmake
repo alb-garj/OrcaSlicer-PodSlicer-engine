@@ -76,3 +76,18 @@ orcaslicer_add_cmake_project(OpenCV
        -DHAVE_WIN32UI=FALSE
 )
 
+# On Android, samples/android/CMakeLists.txt unconditionally calls add_android_project
+# which is only available in the Android Gradle plugin — not in NDK-only builds.
+# ExternalProject_Add_Step runs between patch and configure; <SOURCE_DIR> is supported.
+if(ANDROID)
+    ExternalProject_Add_Step(dep_OpenCV android_guard
+        COMMAND ${CMAKE_COMMAND}
+            "-DANDROID=1"
+            "-DTARGET_FILE=<SOURCE_DIR>/samples/android/CMakeLists.txt"
+            -P ${CMAKE_CURRENT_LIST_DIR}/android-guard.cmake
+        DEPENDEES patch
+        DEPENDERS configure
+        COMMENT "Prepending add_android_project guard to OpenCV samples/android/CMakeLists.txt"
+    )
+endif()
+

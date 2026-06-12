@@ -59,14 +59,25 @@ else ()
         set(_cross_compile_arg --host=${TOOLCHAIN_PREFIX})
     endif ()
 
+    # For Android, use the versioned clang wrapper (aarch64-linux-android26-clang)
+    # which has --target baked in. Bare clang compiles for the build host and
+    # fails GMP's internal C++ compiler test during configure.
+    if (ANDROID AND DEFINED ANDROID_AUTOCONF_CC)
+        set(_autoconf_cc  "${ANDROID_AUTOCONF_CC}")
+        set(_autoconf_cxx "${ANDROID_AUTOCONF_CXX}")
+    else()
+        set(_autoconf_cc  "${CMAKE_C_COMPILER}")
+        set(_autoconf_cxx "${CMAKE_CXX_COMPILER}")
+    endif()
+
     ExternalProject_Add(dep_GMP
         URL https://github.com/SoftFever/OrcaSlicer_deps/releases/download/gmp-6.2.1/gmp-6.2.1.tar.bz2
         URL_HASH SHA256=eae9326beb4158c386e39a356818031bd28f3124cf915f8c5b1dc4c7a36b4d7c
         DOWNLOAD_DIR ${DEP_DOWNLOAD_DIR}/GMP
         PATCH_COMMAND git apply ${GMP_DIRECTORY_FLAG} --verbose ${CMAKE_CURRENT_LIST_DIR}/0001-GMP_GCC15.patch
         BUILD_IN_SOURCE ON
-        CONFIGURE_COMMAND  env "CC=${CMAKE_C_COMPILER}" "CXX=${CMAKE_CXX_COMPILER}" "CFLAGS=${_gmp_ccflags}" "CXXFLAGS=${_gmp_ccflags}" "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS}" ./configure ${_cross_compile_arg} --enable-shared=no --enable-cxx=yes --enable-static=yes "--prefix=${DESTDIR}" ${_gmp_build_tgt}
-        BUILD_COMMAND     make -j
-        INSTALL_COMMAND   make install
+        CONFIGURE_COMMAND  env "CC=${_autoconf_cc}" "CXX=${_autoconf_cxx}" "CFLAGS=${_gmp_ccflags}" "CXXFLAGS=${_gmp_ccflags}" "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS}" ./configure ${_cross_compile_arg} --enable-shared=no --enable-cxx=yes --enable-static=yes "--prefix=${DESTDIR}" ${_gmp_build_tgt}
+        BUILD_COMMAND     make -j MAKEINFO=true
+        INSTALL_COMMAND   make install MAKEINFO=true
     )
 endif ()
