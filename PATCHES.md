@@ -24,6 +24,7 @@ Upstream PRs are tracked in the last column; accepted PRs shrink this table perm
 | 15 | `deps/TBB/tbb-android-stl-fix.cmake` (new) + `deps/TBB/TBB.cmake` | PATCH_COMMAND cmake script rewrites TBB's `configure_file` path from `sources/cxx-stl/llvm-libc++/libs/…` to `toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/` | NDK r28 moved `libc++_shared.so`; TBB 2021.5.0 hardcodes the old pre-r28 path | — |
 | 16 | `deps/CURL/CURL.cmake` | Android section: pass explicit `-DOPENSSL_CRYPTO_LIBRARY/-DOPENSSL_SSL_LIBRARY/-DOPENSSL_INCLUDE_DIR=${DESTDIR}/…`; add `add_dependencies(dep_CURL dep_OpenSSL)` | NDK toolchain sets `CMAKE_FIND_ROOT_PATH_MODE_{INCLUDE,LIBRARY}=ONLY` → `CMAKE_PREFIX_PATH` is ignored; cross-compiled OpenSSL in destdir is never found without explicit paths | — |
 | 17 | `deps/GMP/GMP.cmake` + `deps/MPFR/MPFR.cmake` | Pass `MAKEINFO=true` to `make` BUILD_COMMAND and INSTALL_COMMAND | GMP/MPFR build the `doc/` subdirectory which requires `makeinfo` (texinfo); when building on NTFS via WSL2, .texi timestamps appear modified and make tries to regenerate .info files — overriding `MAKEINFO` to the no-op `true` suppresses this without skipping the library build | — |
+| 18 | `deps/MPFR/MPFR.cmake` | Skip `autoreconf -f -i` in CONFIGURE_COMMAND when `ANDROID`; MPFR 4.2.2 ships a pre-generated configure script | `autoconf`/`automake` are not required on the Android WSL2 build host; `autoreconf` regenerates configure from .ac files and is not needed for a tarball build | — |
 
 ## How to update to a new upstream tag
 
