@@ -320,6 +320,17 @@ if(SLIC3R_ANDROID)
     #   deps_src/libnest2d/include       — libnest2d headers
     #   destdir/usr/local/include/opencascade — OCCT headers (XCAFDoc_*, BRep_*, etc.)
     #   destdir/usr/local/sdk/native/jni/include — OpenCV headers
+    # CMAKE_PREFIX_PATH is a list (NDK toolchain prepends itself), so avoid
+    # ${CMAKE_PREFIX_PATH}/subdir expansion — it only appends to the last element.
+    # Iterate instead, same pattern as the OpenCV_DIR detection in Patch 25.
+    foreach(_pfx IN LISTS CMAKE_PREFIX_PATH)
+        if(IS_DIRECTORY "${_pfx}/include/opencascade")
+            list(APPEND _orca_sys_incs "${_pfx}/include/opencascade")
+        endif()
+        if(IS_DIRECTORY "${_pfx}/sdk/native/jni/include")
+            list(APPEND _orca_sys_incs "${_pfx}/sdk/native/jni/include")
+        endif()
+    endforeach()
     target_include_directories(orca-cli SYSTEM PRIVATE
         ${CMAKE_BINARY_DIR}/src/libslic3r
         ${CMAKE_SOURCE_DIR}/deps_src
@@ -328,8 +339,7 @@ if(SLIC3R_ANDROID)
         ${CMAKE_SOURCE_DIR}/deps_src/libigl
         ${CMAKE_SOURCE_DIR}/deps_src/miniz
         ${CMAKE_SOURCE_DIR}/deps_src/libnest2d/include
-        ${CMAKE_PREFIX_PATH}/include/opencascade
-        ${CMAKE_PREFIX_PATH}/sdk/native/jni/include
+        ${_orca_sys_incs}
     )
     # NDK r28 STL compat shim (Patch 28/29): force-include missing transitives.
     target_compile_options(orca-cli PRIVATE
