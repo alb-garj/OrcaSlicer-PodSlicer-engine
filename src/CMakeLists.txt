@@ -325,7 +325,7 @@ if(SLIC3R_ANDROID)
         ${CMAKE_BINARY_DIR}/src/libslic3r     # generated libslic3r_version.h
         ${CMAKE_SOURCE_DIR}/deps_src          # nlohmann/json.hpp (from 3mf.hpp)
         ${CMAKE_SOURCE_DIR}/deps_src/eigen    # <Eigen/Geometry> etc.
-        ${CMAKE_SOURCE_DIR}/src/libigl        # <igl/Hit.h> etc.
+        ${CMAKE_SOURCE_DIR}/deps_src/libigl   # <igl/Hit.h> etc.
         ${_orca_dep_incs}                     # destdir/usr/local/include — Boost etc.
     )
     # NDK r28 STL compat shim (Patch 28): force-include missing transitives.
