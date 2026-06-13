@@ -310,9 +310,13 @@ if(SLIC3R_ANDROID)
     add_executable(orca-cli OrcaSlicer.cpp OrcaSlicer.hpp)
     target_link_libraries(orca-cli PRIVATE orcaslicer-core cereal::cereal)
     # orcaslicer-core embeds libslic3r PRIVATELY so transitive include paths don't
-    # propagate.  libslic3r gets deps_src/ via "-isystem deps_src/admesh/.." (parent
-    # traversal); add it explicitly for orca-cli so "nlohmann/json.hpp" resolves (P29).
-    target_include_directories(orca-cli SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/deps_src)
+    # propagate (Patch 29).  Explicitly add:
+    #   deps_src/          — for "nlohmann/json.hpp" (same parent-traversal libslic3r gets)
+    #   build/src/libslic3r — for generated libslic3r_version.h (libslic3r PUBLIC binary dir)
+    target_include_directories(orca-cli SYSTEM PRIVATE
+        ${CMAKE_SOURCE_DIR}/deps_src
+        ${CMAKE_BINARY_DIR}/src/libslic3r
+    )
     # NDK r28 STL compat shim (Patch 28/29): force-include missing transitives.
     target_compile_options(orca-cli PRIVATE
         -include ${CMAKE_SOURCE_DIR}/src/libslic3r/android_stl_compat.hpp
