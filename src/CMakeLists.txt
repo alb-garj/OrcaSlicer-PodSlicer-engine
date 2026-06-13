@@ -311,7 +311,9 @@ if(SLIC3R_ANDROID)
     # OrcaSlicer_android.cpp calls libslic3r directly: load_3mf → Print::process
     # → Print::export_gcode.  Links orcaslicer-core so the .so is in the same dir.
     add_executable(orca-cli OrcaSlicer_android.cpp)
-    target_link_libraries(orca-cli PRIVATE orcaslicer-core)
+    # Patch 33: OrcaSlicer_android.cpp uses boost::filesystem + boost::log + boost::nowide
+    # directly. orcaslicer-core links them PRIVATELY so they don't propagate to the exe.
+    target_link_libraries(orca-cli PRIVATE orcaslicer-core boost_libs)
     # Patch 30: OrcaSlicer_android.cpp only uses libslic3r + Boost headers.
     # orcaslicer-core links libslic3r PRIVATELY so interface paths don't propagate.
     # CMAKE_PREFIX_PATH is a list; use foreach to get the destdir entry safely.
