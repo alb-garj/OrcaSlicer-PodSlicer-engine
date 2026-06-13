@@ -707,24 +707,26 @@ endif ()
 
 find_package(PNG REQUIRED)
 
-set(OpenGL_GL_PREFERENCE "LEGACY")
-find_package(OpenGL REQUIRED)
+if(NOT SLIC3R_ANDROID)
+    set(OpenGL_GL_PREFERENCE "LEGACY")
+    find_package(OpenGL REQUIRED)
 
-if(APPLE AND CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
-    set(OPENGL_LIBRARIES "-framework OpenGL" CACHE STRING "OpenGL framework" FORCE)
-endif()
+    if(APPLE AND CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
+        set(OPENGL_LIBRARIES "-framework OpenGL" CACHE STRING "OpenGL framework" FORCE)
+    endif()
 
-set(GLEW_ROOT "${CMAKE_PREFIX_PATH}")
-message("GLEW_ROOT: ${GLEW_ROOT}")
-# Find glew or use bundled version
-if (SLIC3R_STATIC AND NOT SLIC3R_STATIC_EXCLUDE_GLEW)
-    set(GLEW_USE_STATIC_LIBS ON)
-    set(GLEW_VERBOSE ON)
-endif()
+    set(GLEW_ROOT "${CMAKE_PREFIX_PATH}")
+    message("GLEW_ROOT: ${GLEW_ROOT}")
+    # Find glew or use bundled version
+    if (SLIC3R_STATIC AND NOT SLIC3R_STATIC_EXCLUDE_GLEW)
+        set(GLEW_USE_STATIC_LIBS ON)
+        set(GLEW_VERBOSE ON)
+    endif()
 
-find_package(GLEW REQUIRED)
+    find_package(GLEW REQUIRED)
 
-find_package(glfw3 REQUIRED)
+    find_package(glfw3 REQUIRED)
+endif() # NOT SLIC3R_ANDROID
 
 # Find the Cereal serialization library
 find_package(cereal REQUIRED)
