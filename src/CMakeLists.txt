@@ -321,10 +321,12 @@ if(SLIC3R_ANDROID)
         endif()
     endforeach()
     target_include_directories(orca-cli SYSTEM PRIVATE
-        ${CMAKE_SOURCE_DIR}/src            # libslic3r/*.hpp
-        ${CMAKE_BINARY_DIR}/src/libslic3r  # generated libslic3r_version.h
-        ${CMAKE_SOURCE_DIR}/deps_src       # nlohmann/json.hpp (from 3mf.hpp)
-        ${_orca_dep_incs}                  # destdir/usr/local/include — Boost etc.
+        ${CMAKE_SOURCE_DIR}/src               # libslic3r/*.hpp
+        ${CMAKE_BINARY_DIR}/src/libslic3r     # generated libslic3r_version.h
+        ${CMAKE_SOURCE_DIR}/deps_src          # nlohmann/json.hpp (from 3mf.hpp)
+        ${CMAKE_SOURCE_DIR}/deps_src/eigen    # <Eigen/Geometry> etc.
+        ${CMAKE_SOURCE_DIR}/src/libigl        # <igl/Hit.h> etc.
+        ${_orca_dep_incs}                     # destdir/usr/local/include — Boost etc.
     )
     # NDK r28 STL compat shim (Patch 28): force-include missing transitives.
     target_compile_options(orca-cli PRIVATE
