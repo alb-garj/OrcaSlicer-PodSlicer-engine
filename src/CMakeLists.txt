@@ -310,14 +310,22 @@ if(SLIC3R_ANDROID)
     add_executable(orca-cli OrcaSlicer.cpp OrcaSlicer.hpp)
     target_link_libraries(orca-cli PRIVATE orcaslicer-core cereal::cereal)
     # orcaslicer-core embeds libslic3r PRIVATELY so transitive include paths don't
-    # propagate (Patch 29).  Explicitly add:
-    #   deps_src/          — for "nlohmann/json.hpp" (same parent-traversal libslic3r gets)
-    #   deps_src/eigen     — for <Eigen/Geometry> (eigen INTERFACE target exposes deps_src/eigen)
-    #   build/src/libslic3r — for generated libslic3r_version.h (libslic3r PUBLIC binary dir)
+    # propagate (Patch 29).  Mirror libslic3r's full PUBLIC include set:
+    #   build/src/libslic3r    — generated libslic3r_version.h (libslic3r PUBLIC binary dir)
+    #   deps_src/              — nlohmann/json.hpp + parent-dir of all deps_src/* targets
+    #   deps_src/admesh        — admesh C headers
+    #   deps_src/eigen         — <Eigen/Geometry>
+    #   deps_src/libigl        — <igl/Hit.h>
+    #   deps_src/miniz         — miniz headers
+    #   deps_src/libnest2d/include — libnest2d headers
     target_include_directories(orca-cli SYSTEM PRIVATE
-        ${CMAKE_SOURCE_DIR}/deps_src
-        ${CMAKE_SOURCE_DIR}/deps_src/eigen
         ${CMAKE_BINARY_DIR}/src/libslic3r
+        ${CMAKE_SOURCE_DIR}/deps_src
+        ${CMAKE_SOURCE_DIR}/deps_src/admesh
+        ${CMAKE_SOURCE_DIR}/deps_src/eigen
+        ${CMAKE_SOURCE_DIR}/deps_src/libigl
+        ${CMAKE_SOURCE_DIR}/deps_src/miniz
+        ${CMAKE_SOURCE_DIR}/deps_src/libnest2d/include
     )
     # NDK r28 STL compat shim (Patch 28/29): force-include missing transitives.
     target_compile_options(orca-cli PRIVATE
