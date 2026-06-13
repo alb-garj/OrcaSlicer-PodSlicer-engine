@@ -496,6 +496,17 @@ set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE ON CACHE BOOL "" FORCE)
 cmake_policy(PUSH)
 cmake_policy(SET CMP0011 NEW)
 find_package(CGAL REQUIRED)
+# OpenCV Android SDK installs its cmake config under sdk/native/jni/abi-<ABI>/.
+# Standard find_package won't search there; set OpenCV_DIR explicitly on Android.
+if(ANDROID AND NOT OpenCV_DIR)
+    foreach(_prefix ${CMAKE_PREFIX_PATH})
+        set(_ocv_candidate "${_prefix}/sdk/native/jni/abi-${ANDROID_ABI}")
+        if(EXISTS "${_ocv_candidate}/OpenCVConfig.cmake")
+            set(OpenCV_DIR "${_ocv_candidate}" CACHE PATH "OpenCV android cmake dir" FORCE)
+            break()
+        endif()
+    endforeach()
+endif()
 find_package(OpenCV REQUIRED core)
 cmake_policy(POP)
 
