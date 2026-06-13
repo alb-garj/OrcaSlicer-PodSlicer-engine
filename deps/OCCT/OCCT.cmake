@@ -4,13 +4,11 @@ else()
     set(library_build_type "Static")
 endif()
 
-# Visualization modules are all OFF for Android; disabling Freetype avoids
-# cross-compile find_package issues (FindFreetype needs explicit paths under NDK sysroot).
-if(ANDROID)
-    set(_occt_use_freetype OFF)
-else()
-    set(_occt_use_freetype ON)
-endif()
+# Freetype is always enabled. On Android, patch 21 (FIND_ROOT_PATH_MODE_*=BOTH) lets
+# OCCT's find_package(Freetype) locate the cross-compiled Freetype in CMAKE_PREFIX_PATH
+# (deps destdir). Disabling it caused Font_FTFont.cxx to compile without FT_LOAD_*
+# includes while TKService still compiled that file unconditionally.
+set(_occt_use_freetype ON)
 
 if (IN_GIT_REPO)
     set(OCCT_DIRECTORY_FLAG --directory ${BINARY_DIR_REL}/dep_OCCT-prefix/src/dep_OCCT)
