@@ -312,13 +312,19 @@ if(SLIC3R_ANDROID)
     # → Print::export_gcode.  Links orcaslicer-core so the .so is in the same dir.
     add_executable(orca-cli OrcaSlicer_android.cpp)
     target_link_libraries(orca-cli PRIVATE orcaslicer-core)
-    # Patch 30: OrcaSlicer_android.cpp only uses libslic3r headers — much simpler
-    # include set than the desktop OrcaSlicer.cpp (no Eigen/libigl/OCCT/OpenCV).
+    # Patch 30: OrcaSlicer_android.cpp only uses libslic3r + Boost headers.
     # orcaslicer-core links libslic3r PRIVATELY so interface paths don't propagate.
+    # CMAKE_PREFIX_PATH is a list; use foreach to get the destdir entry safely.
+    foreach(_pfx IN LISTS CMAKE_PREFIX_PATH)
+        if(IS_DIRECTORY "${_pfx}/include")
+            list(APPEND _orca_dep_incs "${_pfx}/include")
+        endif()
+    endforeach()
     target_include_directories(orca-cli SYSTEM PRIVATE
         ${CMAKE_SOURCE_DIR}/src            # libslic3r/*.hpp
         ${CMAKE_BINARY_DIR}/src/libslic3r  # generated libslic3r_version.h
-        ${CMAKE_SOURCE_DIR}/deps_src       # nlohmann/json.hpp (pulled by 3mf.hpp)
+        ${CMAKE_SOURCE_DIR}/deps_src       # nlohmann/json.hpp (from 3mf.hpp)
+        ${_orca_dep_incs}                  # destdir/usr/local/include — Boost etc.
     )
     # NDK r28 STL compat shim (Patch 28): force-include missing transitives.
     target_compile_options(orca-cli PRIVATE
