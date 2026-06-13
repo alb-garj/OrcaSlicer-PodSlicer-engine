@@ -312,9 +312,11 @@ if(SLIC3R_ANDROID)
     # orcaslicer-core embeds libslic3r PRIVATELY so transitive include paths don't
     # propagate (Patch 29).  Explicitly add:
     #   deps_src/          — for "nlohmann/json.hpp" (same parent-traversal libslic3r gets)
+    #   deps_src/eigen     — for <Eigen/Geometry> (eigen INTERFACE target exposes deps_src/eigen)
     #   build/src/libslic3r — for generated libslic3r_version.h (libslic3r PUBLIC binary dir)
     target_include_directories(orca-cli SYSTEM PRIVATE
         ${CMAKE_SOURCE_DIR}/deps_src
+        ${CMAKE_SOURCE_DIR}/deps_src/eigen
         ${CMAKE_BINARY_DIR}/src/libslic3r
     )
     # NDK r28 STL compat shim (Patch 28/29): force-include missing transitives.
