@@ -608,6 +608,13 @@ if(NOT WIN32)
     endif()
 endif()
 
+if(ANDROID)
+    # Patch 32: supply symbols normally provided by src/slic3r/ (GUI layer, not
+    # compiled with SLIC3R_GUI=OFF): RGB2HSV (FlushVolCalc.cpp) and the nanosvg
+    # implementation (NSVGUtils.cpp).
+    target_sources(libslic3r PRIVATE android_gui_stubs.cpp)
+endif()
+
 if (APPLE)
     find_library(FOUNDATION Foundation REQUIRED)
     find_library(MODELIO ModelIO REQUIRED)
