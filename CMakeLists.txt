@@ -147,7 +147,10 @@ set(OPENVDB_FIND_MODULE_PATH "" CACHE PATH "Path to OpenVDB installation's find 
 
 set(SLIC3R_GTK "3" CACHE STRING "GTK version to use with wxWidgets on Linux")
 
-set(IS_CROSS_COMPILE FALSE)
+# Only initialize IS_CROSS_COMPILE to FALSE if SLIC3R_ANDROID hasn't already set it TRUE.
+if(NOT IS_CROSS_COMPILE)
+    set(IS_CROSS_COMPILE FALSE)
+endif()
 
 option (COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
 if (${COLORED_OUTPUT})
