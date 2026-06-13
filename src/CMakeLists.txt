@@ -319,6 +319,11 @@ if(SLIC3R_ANDROID)
         if(IS_DIRECTORY "${_pfx}/include")
             list(APPEND _orca_dep_incs "${_pfx}/include")
         endif()
+        # OCCT installs headers under include/opencascade/ — needs its own -isystem entry
+        # since OrcaSlicer includes them without the opencascade/ prefix (e.g. "XCAFDoc_DocumentTool.hxx").
+        if(IS_DIRECTORY "${_pfx}/include/opencascade")
+            list(APPEND _orca_dep_incs "${_pfx}/include/opencascade")
+        endif()
     endforeach()
     target_include_directories(orca-cli SYSTEM PRIVATE
         ${CMAKE_SOURCE_DIR}/src               # libslic3r/*.hpp
