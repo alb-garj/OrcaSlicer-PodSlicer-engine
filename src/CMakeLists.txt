@@ -306,42 +306,21 @@ if(SLIC3R_ANDROID)
     install(TARGETS orcaslicer-core LIBRARY DESTINATION lib)
 
     # CLI harness: standalone executable for on-device testing via adb shell.
-    # Links orcaslicer-core so the .so is in the same directory.
-    add_executable(orca-cli OrcaSlicer.cpp OrcaSlicer.hpp)
-    target_link_libraries(orca-cli PRIVATE orcaslicer-core cereal::cereal)
-    # orcaslicer-core embeds libslic3r PRIVATELY so transitive include paths don't
-    # propagate (Patch 29).  Mirror libslic3r's full PUBLIC include set:
-    #   build/src/libslic3r              — generated libslic3r_version.h
-    #   deps_src/                        — nlohmann/json.hpp + parent-dir of deps_src/* targets
-    #   deps_src/admesh                  — admesh C headers
-    #   deps_src/eigen                   — <Eigen/Geometry>
-    #   deps_src/libigl                  — <igl/Hit.h>
-    #   deps_src/miniz                   — miniz headers
-    #   deps_src/libnest2d/include       — libnest2d headers
-    #   destdir/usr/local/include/opencascade — OCCT headers (XCAFDoc_*, BRep_*, etc.)
-    #   destdir/usr/local/sdk/native/jni/include — OpenCV headers
-    # CMAKE_PREFIX_PATH is a list (NDK toolchain prepends itself), so avoid
-    # ${CMAKE_PREFIX_PATH}/subdir expansion — it only appends to the last element.
-    # Iterate instead, same pattern as the OpenCV_DIR detection in Patch 25.
-    foreach(_pfx IN LISTS CMAKE_PREFIX_PATH)
-        if(IS_DIRECTORY "${_pfx}/include/opencascade")
-            list(APPEND _orca_sys_incs "${_pfx}/include/opencascade")
-        endif()
-        if(IS_DIRECTORY "${_pfx}/sdk/native/jni/include")
-            list(APPEND _orca_sys_incs "${_pfx}/sdk/native/jni/include")
-        endif()
-    endforeach()
+    # Patch 30: use OrcaSlicer_android.cpp instead of the desktop OrcaSlicer.cpp.
+    # The desktop CLI pulls in wxWidgets/PartPlate/OpenGL — none available in NDK.
+    # OrcaSlicer_android.cpp calls libslic3r directly: load_3mf → Print::process
+    # → Print::export_gcode.  Links orcaslicer-core so the .so is in the same dir.
+    add_executable(orca-cli OrcaSlicer_android.cpp)
+    target_link_libraries(orca-cli PRIVATE orcaslicer-core)
+    # Patch 30: OrcaSlicer_android.cpp only uses libslic3r headers — much simpler
+    # include set than the desktop OrcaSlicer.cpp (no Eigen/libigl/OCCT/OpenCV).
+    # orcaslicer-core links libslic3r PRIVATELY so interface paths don't propagate.
     target_include_directories(orca-cli SYSTEM PRIVATE
-        ${CMAKE_BINARY_DIR}/src/libslic3r
-        ${CMAKE_SOURCE_DIR}/deps_src
-        ${CMAKE_SOURCE_DIR}/deps_src/admesh
-        ${CMAKE_SOURCE_DIR}/deps_src/eigen
-        ${CMAKE_SOURCE_DIR}/deps_src/libigl
-        ${CMAKE_SOURCE_DIR}/deps_src/miniz
-        ${CMAKE_SOURCE_DIR}/deps_src/libnest2d/include
-        ${_orca_sys_incs}
+        ${CMAKE_SOURCE_DIR}/src            # libslic3r/*.hpp
+        ${CMAKE_BINARY_DIR}/src/libslic3r  # generated libslic3r_version.h
+        ${CMAKE_SOURCE_DIR}/deps_src       # nlohmann/json.hpp (pulled by 3mf.hpp)
     )
-    # NDK r28 STL compat shim (Patch 28/29): force-include missing transitives.
+    # NDK r28 STL compat shim (Patch 28): force-include missing transitives.
     target_compile_options(orca-cli PRIVATE
         -include ${CMAKE_SOURCE_DIR}/src/libslic3r/android_stl_compat.hpp
     )
