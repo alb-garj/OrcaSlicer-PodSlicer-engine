@@ -311,13 +311,15 @@ if(SLIC3R_ANDROID)
     target_link_libraries(orca-cli PRIVATE orcaslicer-core cereal::cereal)
     # orcaslicer-core embeds libslic3r PRIVATELY so transitive include paths don't
     # propagate (Patch 29).  Mirror libslic3r's full PUBLIC include set:
-    #   build/src/libslic3r    — generated libslic3r_version.h (libslic3r PUBLIC binary dir)
-    #   deps_src/              — nlohmann/json.hpp + parent-dir of all deps_src/* targets
-    #   deps_src/admesh        — admesh C headers
-    #   deps_src/eigen         — <Eigen/Geometry>
-    #   deps_src/libigl        — <igl/Hit.h>
-    #   deps_src/miniz         — miniz headers
-    #   deps_src/libnest2d/include — libnest2d headers
+    #   build/src/libslic3r              — generated libslic3r_version.h
+    #   deps_src/                        — nlohmann/json.hpp + parent-dir of deps_src/* targets
+    #   deps_src/admesh                  — admesh C headers
+    #   deps_src/eigen                   — <Eigen/Geometry>
+    #   deps_src/libigl                  — <igl/Hit.h>
+    #   deps_src/miniz                   — miniz headers
+    #   deps_src/libnest2d/include       — libnest2d headers
+    #   destdir/usr/local/include/opencascade — OCCT headers (XCAFDoc_*, BRep_*, etc.)
+    #   destdir/usr/local/sdk/native/jni/include — OpenCV headers
     target_include_directories(orca-cli SYSTEM PRIVATE
         ${CMAKE_BINARY_DIR}/src/libslic3r
         ${CMAKE_SOURCE_DIR}/deps_src
@@ -326,6 +328,8 @@ if(SLIC3R_ANDROID)
         ${CMAKE_SOURCE_DIR}/deps_src/libigl
         ${CMAKE_SOURCE_DIR}/deps_src/miniz
         ${CMAKE_SOURCE_DIR}/deps_src/libnest2d/include
+        ${CMAKE_PREFIX_PATH}/include/opencascade
+        ${CMAKE_PREFIX_PATH}/sdk/native/jni/include
     )
     # NDK r28 STL compat shim (Patch 28/29): force-include missing transitives.
     target_compile_options(orca-cli PRIVATE
