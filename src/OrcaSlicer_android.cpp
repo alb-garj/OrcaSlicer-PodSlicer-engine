@@ -6,8 +6,13 @@
 //   load_3mf → Print::apply → Print::process → Print::export_gcode
 //
 // Usage:
-//   orca-cli --slice <input.3mf> [--output <out.gcode>]
+//   orca-cli --slice <input.3mf> [--output <out.gcode>] [--threads <n>]
 //   orca-cli --version
+//
+// --threads 1 caps the TBB global thread pool to a single worker (via
+// Slic3r::disable_multi_threading()) so the slice is fully deterministic —
+// no TBB task-stealing order to introduce run-to-run or cross-arch noise.
+// Used by the host Linux baseline for arm64-vs-Linux byte-diff parity checks.
 
 #include <cstdio>
 #include <cstdlib>
@@ -25,11 +30,12 @@
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Format/3mf.hpp"
 #include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/Utils.hpp"
 
 static void usage(const char* prog) {
     boost::nowide::cout
         << "Usage:\n"
-        << "  " << prog << " --slice <input.3mf> [--output <out.gcode>]\n"
+        << "  " << prog << " --slice <input.3mf> [--output <out.gcode>] [--threads <n>]\n"
         << "  " << prog << " --version\n";
 }
 
@@ -37,6 +43,7 @@ int main(int argc, char** argv) {
     const char* input_path  = nullptr;
     const char* output_path = nullptr;
     bool        do_slice    = false;
+    int         threads     = 0; // 0 = engine default concurrency
 
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--version") == 0) {
@@ -47,6 +54,8 @@ int main(int argc, char** argv) {
             do_slice   = true;
         } else if (std::strcmp(argv[i], "--output") == 0 && i + 1 < argc) {
             output_path = argv[++i];
+        } else if (std::strcmp(argv[i], "--threads") == 0 && i + 1 < argc) {
+            threads = std::atoi(argv[++i]);
         } else if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
             usage(argv[0]);
             return 0;
@@ -60,6 +69,15 @@ int main(int argc, char** argv) {
     if (!do_slice) {
         usage(argv[0]);
         return 1;
+    }
+
+    if (threads == 1) {
+        // Only single-thread forcing is wired up (the determinism use case);
+        // other thread counts would need tbb::global_control with that value.
+        Slic3r::disable_multi_threading();
+    } else if (threads > 1) {
+        boost::nowide::cerr << "--threads values other than 1 are not supported; "
+                                "ignoring and using engine default concurrency.\n";
     }
 
     if (!boost::filesystem::exists(input_path)) {
