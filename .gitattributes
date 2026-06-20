@@ -1,2 +1,8 @@
 # Set the default behavior, in case people don't have core.autocrlf set.
 * text=auto
+
+# Patch files and shell scripts must stay LF — CRLF corrupts `git apply`
+# (deps build patch step) and breaks `#!/bin/bash` shebangs under WSL/Linux
+# when checked out on Windows with core.autocrlf=true.
+*.patch -text eol=lf
+*.sh eol=lf
