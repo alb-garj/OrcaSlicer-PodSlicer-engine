@@ -228,10 +228,27 @@ void name_tbb_thread_pool_threads_set_locale()
 	nthreads = 1;
 #endif
 
+	auto master_thread_id = std::this_thread::get_id();
+#ifdef SLIC3R_ANDROID
+	// The upstream rendezvous below assumes tbb::this_task_arena::max_concurrency()
+	// concurrent workers actually get scheduled at once -- false under Android's per-app
+	// cpuset/cgroup CPU affinity restrictions (the same class of "non-standard task
+	// affinity" the GH #5661 comment above warns about for Linux), where TBB may run the
+	// blocked_range tasks one at a time on fewer real threads than max_concurrency()
+	// reported. With the barrier, a task that arrives expecting nthreads peers that never
+	// show up blocks on cv.wait() forever -- observed as nativeSlice() hanging
+	// indefinitely on every model, even a single 5mm cube. Each task just names/locales
+	// itself with no cross-task wait; harmless if TBB reuses a thread for multiple range
+	// items (it just re-applies the same idempotent name/locale).
+    tbb::parallel_for(
+        tbb::blocked_range<size_t>(0, nthreads, 1),
+        [&master_thread_id](const tbb::blocked_range<size_t> &range) {
+        	assert(range.begin() + 1 == range.end());
+        	auto thread_id = std::this_thread::get_id();
+#else
 	size_t                  nthreads_running(0);
 	std::condition_variable cv;
 	std::mutex				cv_m;
-	auto					master_thread_id = std::this_thread::get_id();
     tbb::parallel_for(
         tbb::blocked_range<size_t>(0, nthreads, 1),
         [&nthreads_running, nthreads, &master_thread_id, &cv, &cv_m](const tbb::blocked_range<size_t> &range) {
@@ -246,6 +263,7 @@ void name_tbb_thread_pool_threads_set_locale()
 			    cv.wait(lk, [&nthreads_running, nthreads]{return nthreads_running == nthreads;});
         	}
         	auto thread_id = std::this_thread::get_id();
+#endif
 			if (thread_id == master_thread_id) {
 				// The calling thread runs the 0'th task.
 				assert(range.begin() == 0);
