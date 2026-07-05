@@ -19,6 +19,12 @@ arrangement::ArrangePolygons get_arrange_polys(const Model &model, ModelInstance
     for (ModelObject *mo : model.objects)
         for (ModelInstance *minst : mo->instances) {
             minst->get_arrange_polygon(&ap);
+            // get_arrange_polygon() never touches bed_idx, so it's still ArrangePolygon's
+            // UNARRANGED(-1) default here — which numerically collides with libnest2d's
+            // BIN_ID_UNFIT sentinel (also -1, see nester.hpp). Without this reset, every
+            // item enters the packer already looking "known unfit" and firstfit.hpp's
+            // packItems() skips it before ever trying to place it, regardless of bed size.
+            ap.bed_idx = 0;
             input.emplace_back(ap);
             instances.emplace_back(minst);
         }
