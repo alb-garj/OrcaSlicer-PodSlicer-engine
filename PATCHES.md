@@ -1,6 +1,6 @@
-# Android Portability Patches — OrcaSlicer `android/v2.3.1`
+# Android Portability Patches — OrcaSlicer `android/v2.3.2`
 
-This branch = upstream tag `v2.3.1` + the patches below.
+This branch = upstream tag `v2.3.2` + the patches below.
 
 **Rule:** Patch only portability — never slicing behavior. Every behavioral change belongs upstream.
 Upstream PRs are tracked in the last column; accepted PRs shrink this table permanently.
@@ -46,12 +46,47 @@ Upstream PRs are tracked in the last column; accepted PRs shrink this table perm
 
 ## How to update to a new upstream tag
 
+The `android/*` branches do **not** sit on the upstream tag object: this repo is a fork
+whose history was re-created, so `vX.Y.Z` is not an ancestor of the android branch even
+though the trees match. Do not try `git rebase --onto vNEW vOLD` — `vOLD` will not be
+found in the branch's ancestry. Rebase onto the new tag from the **fork's own base
+commit** instead: the commit immediately below the first patch commit
+(`Add PATCHES.md`), which is the fork's equivalent of the old tag.
+
 ```bash
-git fetch upstream --tags
-git checkout -b android/vX.Y.Z vX.Y.Z
-git cherry-pick <patch-commits>   # re-apply the series above onto the new tag
-# Resolve conflicts, update this table, push
+git remote add upstream https://github.com/OrcaSlicer/OrcaSlicer.git   # once
+git fetch upstream tag vOLD tag vNEW --no-tags
+
+# The fork base is the parent of the first patch commit ("Add PATCHES.md").
+BASE=$(git log --format=%H --grep='Add PATCHES.md' -1 android/vOLD)^
+git rev-parse "$BASE^{tree}" "vOLD^{tree}"    # the two trees MUST be identical
+
+git checkout -b android/vNEW android/vOLD
+git rebase --onto vNEW "$BASE"
 ```
+
+Resolve conflicts patch by patch. When upstream has restructured the code around a
+patch, keep the **upstream** shape and re-apply the Android guard inside it — never
+revert an upstream change to make a patch apply cleanly.
+
+Then verify, in this order:
+
+1. `git diff vNEW..android/vNEW` vs `git diff $BASE..android/vOLD` — the two patch sets
+   must differ only by the conflict resolutions you made. Anything else is a lost patch.
+2. `scripts/drift-watch.sh vOLD vNEW` from the app repo — lists upstream changes to the
+   files PodSlicer compiles or vendors. Exit 1 is expected; read the list.
+3. Rebuild deps + `liborcaslicer-core.so`, then run the golden-gcode suite
+   (`scripts/golden-gcode/run.sh`) against the new `.so`. **Slicing output parity is the
+   gate — no submodule pointer bump until it is green.**
+4. Update the table above (drop rows upstream has absorbed), record the row count in the
+   bump history below, push the branch, then bump the submodule pointer in the app repo.
+
+## Bump history
+
+| From | To | Patch rows before | Patch rows after | Notes |
+|---|---|---|---|---|
+| — | `v2.3.1` | — | 36 | Initial Android port. |
+| `v2.3.1` | `v2.3.2` | 36 | 36 | Six conflicts, all in build files; no patch absorbed upstream. Upstream added an Apple-only `OPENGL_LIBRARIES` block (moved inside patch 24's `NOT SLIC3R_ANDROID` guard), moved `include(wxWidgets/wxWidgets.cmake)` out of the `FLATPAK` guard (Android now skips it via its own `NOT ANDROID` guard), added `LDFLAGS` to the GMP/MPFR configure env (carried into both branches of patches 12–18), hoisted `OpenSSL::Crypto` into the main `libslic3r` link list, dropped the UTF-8 BOM from `deps/CMakeLists.txt`, and renamed `deps/OpenCV/0001-vs2022.patch` to `0001-vs.patch`. |
 
 ## References
 
