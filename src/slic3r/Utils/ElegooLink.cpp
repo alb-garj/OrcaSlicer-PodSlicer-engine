@@ -1,9 +1,11 @@
 #include "ElegooLink.hpp"
 
 #include <algorithm>
+#include <regex>
 #include <sstream>
 #include <exception>
 #include <boost/format.hpp>
+#include "libslic3r/Utils.hpp"
 #include <boost/log/trivial.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
