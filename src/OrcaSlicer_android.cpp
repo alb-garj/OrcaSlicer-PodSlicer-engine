@@ -95,7 +95,12 @@ int main(int argc, char** argv) {
 
     BOOST_LOG_TRIVIAL(info) << "orca-cli: slicing " << input_path << " -> " << out;
 
-    Slic3r::DynamicPrintConfig          config;
+    // Start from a fully-populated default config, not an empty one: load_3mf()
+    // only *sets* the keys the 3MF's config section actually contains, so an
+    // empty starting config leaves every option the file omits truly absent
+    // (not defaulted) — Print::apply() indexes several of those unconditionally
+    // and segfaults on the missing entry.
+    Slic3r::DynamicPrintConfig          config = Slic3r::DynamicPrintConfig::full_print_config();
     Slic3r::ConfigSubstitutionContext   subst(Slic3r::ForwardCompatibilitySubstitutionRule::Enable);
     Slic3r::Model                       model;
 
