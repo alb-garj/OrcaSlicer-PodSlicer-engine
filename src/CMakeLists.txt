@@ -337,14 +337,19 @@ if(SLIC3R_ANDROID)
         if(IS_DIRECTORY "${_pfx}/include/opencascade")
             list(APPEND _orca_dep_incs "${_pfx}/include/opencascade")
         endif()
+        # v2.4.x: Eigen moved from vendored deps_src/eigen to a real dep_Eigen build
+        # (find_package(Eigen3 5.0.1)), installing to the standard include/eigen3/ layout —
+        # same "needs its own -isystem entry" situation as opencascade above.
+        if(IS_DIRECTORY "${_pfx}/include/eigen3")
+            list(APPEND _orca_dep_incs "${_pfx}/include/eigen3")
+        endif()
     endforeach()
     target_include_directories(orca-cli SYSTEM PRIVATE
         ${CMAKE_SOURCE_DIR}/src               # libslic3r/*.hpp
         ${CMAKE_BINARY_DIR}/src/libslic3r     # generated libslic3r_version.h
         ${CMAKE_SOURCE_DIR}/deps_src          # nlohmann/json.hpp (from 3mf.hpp)
-        ${CMAKE_SOURCE_DIR}/deps_src/eigen    # <Eigen/Geometry> etc.
         ${CMAKE_SOURCE_DIR}/deps_src/libigl   # <igl/Hit.h> etc.
-        ${_orca_dep_incs}                     # destdir/usr/local/include — Boost etc.
+        ${_orca_dep_incs}                     # destdir/usr/local/include — Boost, Eigen3, OCCT
     )
     # NDK r28 STL compat shim (Patch 28): force-include missing transitives.
     target_compile_options(orca-cli PRIVATE
