@@ -633,10 +633,12 @@ if(NOT WIN32)
     endif()
 endif()
 
-if(ANDROID)
-    # Patch 32: supply symbols normally provided by src/slic3r/ (GUI layer, not
+if(NOT SLIC3R_GUI)
+    # Patch 32/40: supply symbols normally provided by src/slic3r/ (GUI layer, not
     # compiled with SLIC3R_GUI=OFF): RGB2HSV (FlushVolCalc.cpp) and the nanosvg
-    # implementation (NSVGUtils.cpp).
+    # implementation (NSVGUtils.cpp). Gated on SLIC3R_GUI directly (not ANDROID)
+    # so a host build forcing GUI off via SLIC3R_ANDROID=ON without an NDK
+    # toolchain also gets the stubs.
     target_sources(libslic3r PRIVATE android_gui_stubs.cpp)
 endif()
 
