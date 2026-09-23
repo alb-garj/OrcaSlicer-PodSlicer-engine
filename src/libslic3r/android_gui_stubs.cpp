@@ -8,7 +8,7 @@
 //      NANOSVG_IMPLEMENTATION in src/slic3r/GUI/BitmapCache.cpp; that file is
 //      not compiled when SLIC3R_GUI=OFF.
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(SLIC3R_ANDROID)
 
 #include <cmath>
 #include <algorithm>
@@ -40,4 +40,4 @@ void RGB2HSV(float r, float g, float b, float* h, float* s, float* v)
 #define NANOSVG_IMPLEMENTATION
 #include "nanosvg/nanosvg.h"
 
-#endif // __ANDROID__
+#endif // __ANDROID__ || SLIC3R_ANDROID
