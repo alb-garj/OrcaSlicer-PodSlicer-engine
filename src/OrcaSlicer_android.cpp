@@ -117,6 +117,9 @@ int main(int argc, char** argv) {
     config.normalize_fdm();
 
     Slic3r::Print print;
+    // Only the GUI's PartPlate ever sets this; left unset it is uninitialised memory that
+    // GCode export reads (timelapse picker, wipe tower), so results vary by platform/run.
+    print.set_plate_origin(Slic3r::Vec3d::Zero());
     print.apply(model, config);
 
     try {
