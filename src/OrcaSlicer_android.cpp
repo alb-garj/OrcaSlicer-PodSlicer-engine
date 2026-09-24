@@ -120,6 +120,9 @@ int main(int argc, char** argv) {
     // Only the GUI's PartPlate ever sets this; left unset it is uninitialised memory that
     // GCode export reads (timelapse picker, wipe tower), so results vary by platform/run.
     print.set_plate_origin(Slic3r::Vec3d::Zero());
+    // Only the desktop GUI/CLI ever set this from the loaded printer preset; left unset it
+    // is uninitialised memory that changes wipe-tower/GCode header/M624-M625 output by platform/run.
+    print.is_BBL_printer() = false;
     print.apply(model, config);
 
     try {
