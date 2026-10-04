@@ -6,8 +6,10 @@
 //   load_3mf → Print::apply → Print::process → Print::export_gcode
 //
 // Usage:
-//   orca-cli --slice <input.3mf> [--output <out.gcode>] [--threads <n>]
+//   orca-cli --slice <input.3mf> [--output <out.gcode>] [--threads <n>] [--set <key>=<value>]...
 //   orca-cli --version
+//
+// --set overrides a print setting after the 3MF's own config has been loaded.
 //
 // --threads 1 caps the TBB global thread pool to a single worker (via
 // Slic3r::disable_multi_threading()) so the slice is fully deterministic —
@@ -19,6 +21,8 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include <boost/log/trivial.hpp>
 #include <boost/filesystem.hpp>
@@ -35,7 +39,7 @@
 static void usage(const char* prog) {
     boost::nowide::cout
         << "Usage:\n"
-        << "  " << prog << " --slice <input.3mf> [--output <out.gcode>] [--threads <n>]\n"
+        << "  " << prog << " --slice <input.3mf> [--output <out.gcode>] [--threads <n>] [--set <key>=<value>]...\n"
         << "  " << prog << " --version\n";
 }
 
@@ -44,6 +48,7 @@ int main(int argc, char** argv) {
     const char* output_path = nullptr;
     bool        do_slice    = false;
     int         threads     = 0; // 0 = engine default concurrency
+    std::vector<std::pair<std::string, std::string>> overrides;
 
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--version") == 0) {
@@ -56,6 +61,14 @@ int main(int argc, char** argv) {
             output_path = argv[++i];
         } else if (std::strcmp(argv[i], "--threads") == 0 && i + 1 < argc) {
             threads = std::atoi(argv[++i]);
+        } else if (std::strcmp(argv[i], "--set") == 0 && i + 1 < argc) {
+            const std::string kv(argv[++i]);
+            const size_t      eq = kv.find('=');
+            if (eq == std::string::npos || eq == 0) {
+                boost::nowide::cerr << "--set expects <key>=<value>, got: " << kv << "\n";
+                return 1;
+            }
+            overrides.emplace_back(kv.substr(0, eq), kv.substr(eq + 1));
         } else if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
             usage(argv[0]);
             return 0;
@@ -112,6 +125,13 @@ int main(int argc, char** argv) {
     if (model.objects.empty()) {
         boost::nowide::cerr << "No objects found in 3MF.\n";
         return 4;
+    }
+
+    for (const auto& [key, value] : overrides) {
+        if (!config.has(key) || !config.set_deserialize_nothrow(key, value, subst)) {
+            boost::nowide::cerr << "Cannot apply --set " << key << "=" << value << "\n";
+            return 1;
+        }
     }
 
     config.normalize_fdm();
