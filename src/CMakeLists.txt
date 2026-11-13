@@ -310,7 +310,8 @@ if (WIN32)
     endif()
 
 else ()
-    if (NOT APPLE)
+    # Android ships the core library only, without the desktop shared libraries.
+    if (NOT APPLE AND NOT SLIC3R_ANDROID)
         set(output_sos_Release "")
         set(output_sos_Debug "")
         add_custom_target(OrcaSlicerSosCopy ALL DEPENDS OrcaSlicer)
