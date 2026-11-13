@@ -12,6 +12,7 @@ enum class Platform
 	Windows,
 	OSX,
 	Linux,
+	Android,
 	BSDUnix,
 };
 
@@ -21,6 +22,7 @@ enum class PlatformFlavor
     Unknown,
     Generic,         // For Windows and OSX, until we need to be more specific.
     GenericLinux,    // For Platform::Linux
+    GenericAndroid,  // For Platform::Android
     LinuxOnChromium, // For Platform::Linux
     WSL,             // Microsoft's Windows on Linux (Linux kernel simulated on NTFS kernel)
     WSL2,            // Microsoft's Windows on Linux, version 2 (virtual machine)

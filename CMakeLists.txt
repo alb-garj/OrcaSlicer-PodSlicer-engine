@@ -120,6 +120,16 @@ option(SLIC3R_MSVC_COMPILE_PARALLEL "Compile on Visual Studio in parallel" 1)
 option(SLIC3R_MSVC_PDB          "Generate PDB files on MSVC in Release mode" 1)
 option(SLIC3R_RELATIVE_DEBUG_PATHS "Record a relative compilation directory in debug info (clang-cl)" 0)
 option(SLIC3R_ASAN              "Enable ASan on Clang and GCC" 0)
+option(SLIC3R_ANDROID "Build OrcaSlicer for Android — no GUI, produces liborcaslicer-core.so" OFF)
+if(SLIC3R_ANDROID)
+    message(STATUS "SLIC3R_ANDROID=ON: GUI off, PCH off, static deps, cross-compile")
+    set(SLIC3R_GUI    OFF CACHE BOOL "" FORCE)
+    set(SLIC3R_PCH    OFF CACHE BOOL "" FORCE)
+    set(SLIC3R_STATIC ON  CACHE BOOL "" FORCE)
+    set(BUILD_TESTS   OFF CACHE BOOL "" FORCE)
+    set(IS_CROSS_COMPILE TRUE)
+    add_definitions(-DSLIC3R_ANDROID)
+endif()
 
 # Python stubgen module
 option(ORCA_BUILD_PYTHON_STUBGEN_MODULE "Build importable Python module for pybind11-stubgen" ON)
@@ -163,7 +173,8 @@ if(FLATPAK AND NOT ORCA_BUNDLED_UV_EXECUTABLE AND EXISTS "${ORCA_UV_FLATPAK_BINA
     set(ORCA_BUNDLED_UV_EXECUTABLE "${ORCA_UV_FLATPAK_BINARY}")
 endif()
 
-if(NOT ORCA_BUNDLED_UV_EXECUTABLE)
+# Android bundles no Python runtime, so it has no use for uv.
+if(NOT ORCA_BUNDLED_UV_EXECUTABLE AND NOT SLIC3R_ANDROID)
     if(NOT EXISTS "${ORCA_UV_BINARY}")
         # Select uv by TARGET arch. On macOS universal builds each leg sets a single
         # CMAKE_OSX_ARCHITECTURES (and the x86_64 leg cross-builds on an arm64 runner),
@@ -265,7 +276,10 @@ set(OPENVDB_FIND_MODULE_PATH "" CACHE PATH "Path to OpenVDB installation's find 
 
 set(SLIC3R_GTK "3" CACHE STRING "GTK version to use with wxWidgets on Linux")
 
-set(IS_CROSS_COMPILE FALSE)
+# Only initialize IS_CROSS_COMPILE to FALSE if SLIC3R_ANDROID hasn't already set it TRUE.
+if(NOT IS_CROSS_COMPILE)
+    set(IS_CROSS_COMPILE FALSE)
+endif()
 
 option (COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
 if (${COLORED_OUTPUT})
@@ -914,14 +928,16 @@ endif ()
 
 find_package(PNG REQUIRED)
 
-set(OpenGL_GL_PREFERENCE "LEGACY")
-find_package(OpenGL REQUIRED)
+if(NOT SLIC3R_ANDROID)
+    set(OpenGL_GL_PREFERENCE "LEGACY")
+    find_package(OpenGL REQUIRED)
 
-if(APPLE AND CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
-    set(OPENGL_LIBRARIES "-framework OpenGL" CACHE STRING "OpenGL framework" FORCE)
-endif()
+    if(APPLE AND CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
+        set(OPENGL_LIBRARIES "-framework OpenGL" CACHE STRING "OpenGL framework" FORCE)
+    endif()
 
-find_package(glfw3 REQUIRED)
+    find_package(glfw3 REQUIRED)
+endif() # NOT SLIC3R_ANDROID
 
 # Find the Cereal serialization library
 find_package(cereal REQUIRED)

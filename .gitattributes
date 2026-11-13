@@ -13,3 +13,6 @@
 
 # OCCT BRep fixtures, kept byte for byte as OCCT wrote them.
 *.brep -text
+
+# Patch files must stay LF: CRLF corrupts `git apply` in the deps patch step.
+*.patch -text eol=lf

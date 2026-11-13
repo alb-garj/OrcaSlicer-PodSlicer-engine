@@ -56,10 +56,12 @@ endif ()
 include(ExternalProject)
 include(ProcessorCount)
 
-ProcessorCount(NPROC)
-if (NPROC EQUAL 0)
-    set(NPROC 1)
-endif ()
+if(NOT DEFINED NPROC)
+    ProcessorCount(NPROC)
+    if (NPROC EQUAL 0)
+        set(NPROC 1)
+    endif ()
+endif()
 
 set(DEP_DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/DL_CACHE CACHE PATH "Path for downloaded source packages.")
 set(FLATPAK FALSE CACHE BOOL "Toggles various build settings for flatpak, like /usr/local in DESTDIR or not building wxwidgets")
@@ -206,6 +208,14 @@ function(orcaslicer_add_cmake_project projectname)
       set(_build_j "")  # assume environment will control --build parallel setting
     elseif(_dep_msvc_gen)
       set(_build_j "/m")
+    elseif(ANDROID)
+      # On Android/WSL2 OCCT+friends exhaust RAM at -j>4 (~700MB/clang++ × j).
+      # ProcessorCount() may shadow the -DNPROC cache var inside a function scope;
+      # guard here to ensure the cap is applied regardless of scope resolution.
+      set(_build_j "-j${NPROC}")
+      if(_build_j MATCHES "^-j([0-9]+)$" AND CMAKE_MATCH_1 GREATER 4)
+        set(_build_j "-j4")
+      endif()
     else()
       set(_build_j "-j${NPROC}")
     endif ()
@@ -301,7 +311,10 @@ endif()
 endfunction(orcaslicer_add_cmake_project)
 
 
-if (MSVC)
+if (ANDROID)
+    message(STATUS "Building for Android (ABI: ${ANDROID_ABI}, Platform: ${ANDROID_PLATFORM})")
+    include("deps-android.cmake")
+elseif (MSVC)
     if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64")
         message(STATUS "\nDetected X64 compiler => building X64 deps bundle\n")
         set(DEPS_ARCH "x64")
@@ -379,7 +392,9 @@ include(Boost/Boost.cmake)
 include(Cereal/Cereal.cmake)
 include(Qhull/Qhull.cmake)
 
-include(GLFW/GLFW.cmake)
+if(NOT ANDROID)
+    include(GLFW/GLFW.cmake)
+endif()
 set(SLVS_PKG "")
 if (SLIC3R_CAD)
     include(SLVS/SLVS.cmake)
@@ -412,11 +427,14 @@ if(NOT OPENSSL_FOUND)
     set(OPENSSL_PKG dep_OpenSSL)
 endif()
 
-include(FFMPEG/FFMPEG.cmake)
 include(Assimp/Assimp.cmake)
 
-include(DataChannel/DataChannel.cmake)
-set(DATACHANNEL_PKG dep_DataChannel)
+set(DATACHANNEL_PKG "")
+if(NOT ANDROID)
+    include(FFMPEG/FFMPEG.cmake)
+    include(DataChannel/DataChannel.cmake)
+    set(DATACHANNEL_PKG dep_DataChannel)
+endif()
 
 # we don't want to load a "wrong" openssl when loading curl
 # so, just don't even bother
@@ -433,10 +451,13 @@ if (NOT JPEG_FOUND)
     set(JPEG_PKG dep_JPEG)
 endif()
 
-# flatpak builds wxwidgets separately, so it is not included in the deps target
+# flatpak builds wxwidgets separately, so it is not included in the deps target;
+# Android has no GUI, so wxWidgets is not built at all
 set(WXWIDGETS_PKG "")
-include(wxWidgets/wxWidgets.cmake)
-if (NOT FLATPAK)
+if (NOT ANDROID)
+    include(wxWidgets/wxWidgets.cmake)
+endif()
+if (NOT FLATPAK AND NOT ANDROID)
     set(WXWIDGETS_PKG "dep_wxWidgets")
 endif()
 
@@ -456,8 +477,17 @@ endif ()
 
 include(OCCT/OCCT.cmake)
 include(OpenCV/OpenCV.cmake)
-include(python3/python3.cmake)
-include(wxInspector/wxInspector.cmake)
+if(NOT ANDROID)
+    include(python3/python3.cmake)
+    include(wxInspector/wxInspector.cmake)
+endif()
+
+# The embedded Python runtime, the wx inspector, video capture and the WebRTC
+# data channel serve the desktop GUI only; Android builds the slicing core.
+set(DESKTOP_ONLY_PKGS "")
+if(NOT ANDROID)
+    set(DESKTOP_ONLY_PKGS dep_python3 dep_wxInspector dep_FFMPEG ${DATACHANNEL_PKG})
+endif()
 
 set(_dep_list
     dep_Boost
@@ -473,17 +503,14 @@ set(_dep_list
     dep_OpenCV
     dep_Eigen
     dep_CGAL
-    dep_GLFW
     dep_OCCT
+    ${JPEG_PKG}
     ${PNG_PKG}
     ${ZLIB_PKG}
     ${EXPAT_PKG}
     dep_libnoise
-    dep_python3
-    dep_wxInspector
-    dep_FFMPEG
+    ${DESKTOP_ONLY_PKGS}
     dep_Assimp
-    ${DATACHANNEL_PKG}
     )
 
 if (MSVC)

@@ -404,3 +404,76 @@ else ()
     endif()
     install(TARGETS OrcaSlicer RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif ()
+
+# Android: package libslic3r into a shared library loadable via System.loadLibrary().
+# SAPIL JNI entry points (P1.1) link against this .so from engine-jni/.
+if(SLIC3R_ANDROID)
+    add_library(orcaslicer-core SHARED libslic3r_android_init.cpp)
+    target_link_libraries(orcaslicer-core
+        PRIVATE
+            # Force all of libslic3r's object files into the .so (whole-archive),
+            # so libpodslicer_jni.so (P1.1) and orca-cli can link this .so alone.
+            -Wl,--whole-archive
+            libslic3r
+            libslic3r_cgal
+            -Wl,--no-whole-archive
+            cereal::cereal
+    )
+    # Play Store 16 KB page-size alignment (mandatory since May 2026)
+    target_link_options(orcaslicer-core
+        PRIVATE
+            "-Wl,-z,common-page-size=16384"
+            "-Wl,-z,max-page-size=16384"
+    )
+    set_target_properties(orcaslicer-core PROPERTIES
+        OUTPUT_NAME "orcaslicer-core"
+        SOVERSION 1
+        VERSION 2.3.1
+    )
+    install(TARGETS orcaslicer-core LIBRARY DESTINATION lib)
+
+    # CLI harness: standalone executable for on-device testing via adb shell.
+    # Patch 30: use OrcaSlicer_android.cpp instead of the desktop OrcaSlicer.cpp.
+    # The desktop CLI pulls in wxWidgets/PartPlate/OpenGL — none available in NDK.
+    # OrcaSlicer_android.cpp calls libslic3r directly: load_3mf → Print::process
+    # → Print::export_gcode.  Links orcaslicer-core so the .so is in the same dir.
+    add_executable(orca-cli OrcaSlicer_android.cpp)
+    # Patch 33: OrcaSlicer_android.cpp uses boost::filesystem + boost::log + boost::nowide
+    # directly. orcaslicer-core links them PRIVATELY so they don't propagate to the exe.
+    target_link_libraries(orca-cli PRIVATE orcaslicer-core boost_libs)
+    # Patch 30: OrcaSlicer_android.cpp only uses libslic3r + Boost headers.
+    # orcaslicer-core links libslic3r PRIVATELY so interface paths don't propagate.
+    # CMAKE_PREFIX_PATH is a list; use foreach to get the destdir entry safely.
+    foreach(_pfx IN LISTS CMAKE_PREFIX_PATH)
+        if(IS_DIRECTORY "${_pfx}/include")
+            list(APPEND _orca_dep_incs "${_pfx}/include")
+        endif()
+        # OCCT installs headers under include/opencascade/ — needs its own -isystem entry
+        # since OrcaSlicer includes them without the opencascade/ prefix (e.g. "XCAFDoc_DocumentTool.hxx").
+        if(IS_DIRECTORY "${_pfx}/include/opencascade")
+            list(APPEND _orca_dep_incs "${_pfx}/include/opencascade")
+        endif()
+        # v2.4.x: Eigen moved from vendored deps_src/eigen to a real dep_Eigen build
+        # (find_package(Eigen3 5.0.1)), installing to the standard include/eigen3/ layout —
+        # same "needs its own -isystem entry" situation as opencascade above.
+        if(IS_DIRECTORY "${_pfx}/include/eigen3")
+            list(APPEND _orca_dep_incs "${_pfx}/include/eigen3")
+        endif()
+    endforeach()
+    target_include_directories(orca-cli SYSTEM PRIVATE
+        ${CMAKE_SOURCE_DIR}/src               # libslic3r/*.hpp
+        ${CMAKE_BINARY_DIR}/src/libslic3r     # generated libslic3r_version.h
+        ${CMAKE_SOURCE_DIR}/deps_src          # nlohmann/json.hpp (from 3mf.hpp)
+        ${CMAKE_SOURCE_DIR}/deps_src/libigl   # <igl/Hit.h> etc.
+        ${_orca_dep_incs}                     # destdir/usr/local/include — Boost, Eigen3, OCCT
+    )
+    # NDK r28 STL compat shim (Patch 28): force-include missing transitives.
+    target_compile_options(orca-cli PRIVATE
+        -include ${CMAKE_SOURCE_DIR}/src/libslic3r/android_stl_compat.hpp
+    )
+    target_link_options(orca-cli PRIVATE
+        "-Wl,-z,common-page-size=16384"
+        "-Wl,-z,max-page-size=16384"
+    )
+    install(TARGETS orca-cli RUNTIME DESTINATION bin)
+endif()

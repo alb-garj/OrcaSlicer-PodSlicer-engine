@@ -625,6 +625,17 @@ cmake_policy(SET CMP0011 NEW)
 # can't reach it; the default opts its Boost lookup into BoostConfig (CMP0167).
 set(CMAKE_POLICY_DEFAULT_CMP0167 NEW)
 find_package(CGAL 6.2 REQUIRED)
+# OpenCV Android SDK installs its cmake config under sdk/native/jni/abi-<ABI>/.
+# Standard find_package won't search there; set OpenCV_DIR explicitly on Android.
+if(ANDROID AND NOT OpenCV_DIR)
+    foreach(_prefix ${CMAKE_PREFIX_PATH})
+        set(_ocv_candidate "${_prefix}/sdk/native/jni/abi-${ANDROID_ABI}")
+        if(EXISTS "${_ocv_candidate}/OpenCVConfig.cmake")
+            set(OpenCV_DIR "${_ocv_candidate}" CACHE PATH "OpenCV android cmake dir" FORCE)
+            break()
+        endif()
+    endforeach()
+endif()
 find_package(OpenCV REQUIRED core)
 find_package(assimp REQUIRED)
 unset(CMAKE_POLICY_DEFAULT_CMP0167)
@@ -671,6 +682,14 @@ if (MSVC AND "${CMAKE_SIZEOF_VOID_P}" STREQUAL "4") # 32 bit MSVC workaround
 endif ()
 
 encoding_check(libslic3r)
+
+# NDK r28 libc++ no longer pulls in <sstream>/<algorithm>/etc transitively.
+# Force-include the compat shim for every libslic3r TU on Android (Patch 28).
+if(SLIC3R_ANDROID)
+    target_compile_options(libslic3r PRIVATE
+        -include ${CMAKE_CURRENT_SOURCE_DIR}/android_stl_compat.hpp
+    )
+endif()
 
 target_compile_definitions(libslic3r PUBLIC -DUSE_TBB -DTBB_USE_CAPTURED_EXCEPTION=0)
 # CGAL changes Kd_tree's member layout when TBB is enabled. Match libslic3r_cgal
@@ -787,6 +806,15 @@ target_link_libraries(libslic3r
         ZLIB::ZLIB
         OpenSSL::Crypto
     )
+
+if(NOT SLIC3R_GUI)
+    # Patch 32/40: supply symbols normally provided by src/slic3r/ (GUI layer, not
+    # compiled with SLIC3R_GUI=OFF): RGB2HSV (FlushVolCalc.cpp) and the nanosvg
+    # implementation (NSVGUtils.cpp). Gated on SLIC3R_GUI directly (not ANDROID)
+    # so a host build forcing GUI off via SLIC3R_ANDROID=ON without an NDK
+    # toolchain also gets the stubs.
+    target_sources(libslic3r PRIVATE android_gui_stubs.cpp)
+endif()
 
 if (APPLE)
     find_library(FOUNDATION Foundation REQUIRED)
