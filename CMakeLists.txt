@@ -127,6 +127,7 @@ if(SLIC3R_ANDROID)
     set(SLIC3R_PCH    OFF CACHE BOOL "" FORCE)
     set(SLIC3R_STATIC ON  CACHE BOOL "" FORCE)
     set(BUILD_TESTS   OFF CACHE BOOL "" FORCE)
+    set(SLIC3R_CAD    OFF CACHE BOOL "" FORCE)  # no Design tab on Android
     set(IS_CROSS_COMPILE TRUE)
     add_definitions(-DSLIC3R_ANDROID)
 endif()
