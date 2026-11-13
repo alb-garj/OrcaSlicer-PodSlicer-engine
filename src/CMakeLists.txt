@@ -454,6 +454,10 @@ if(SLIC3R_ANDROID)
         if(IS_DIRECTORY "${_pfx}/include/opencascade")
             list(APPEND _orca_dep_incs "${_pfx}/include/opencascade")
         endif()
+        # OCCT 8 moved them to include/occt.
+        if(IS_DIRECTORY "${_pfx}/include/occt")
+            list(APPEND _orca_dep_incs "${_pfx}/include/occt")
+        endif()
         # v2.4.x: Eigen moved from vendored deps_src/eigen to a real dep_Eigen build
         # (find_package(Eigen3 5.0.1)), installing to the standard include/eigen3/ layout —
         # same "needs its own -isystem entry" situation as opencascade above.
