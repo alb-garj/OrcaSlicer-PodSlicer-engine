@@ -990,6 +990,9 @@ endforeach()
 
 find_package(NLopt 1.4 REQUIRED)
 
+# The embedded Python runtime serves the desktop plugin system only; Android builds
+# the slicing core without it.
+if(NOT SLIC3R_ANDROID)
 # Use bundled Python from deps instead of system Python
 set(_bundled_python_version "3.12.13")
 set(_bundled_python_abi "312")
@@ -1069,6 +1072,7 @@ add_library(pybind11_embed INTERFACE)
 target_link_libraries(pybind11_embed INTERFACE pybind11_headers Python3::Python)
 target_compile_definitions(pybind11_embed INTERFACE PYBIND11_SIMPLE_GIL_MANAGEMENT)
 add_library(pybind11::embed ALIAS pybind11_embed)
+endif() # NOT SLIC3R_ANDROID
 
 
 if(SLIC3R_STATIC)
